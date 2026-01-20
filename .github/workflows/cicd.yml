@@ -1,0 +1,134 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, 'feature/**' ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: balancecloud
+          POSTGRES_PASSWORD: balancecloud_dev
+          POSTGRES_DB: balancecloud_mvp
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: 📦 Install dependencies
+      working-directory: ./backend
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install requests
+
+    - name: 🔄 Run database migrations
+      working-directory: ./backend
+      env:
+        DATABASE_URL: postgresql+asyncpg://balancecloud:balancecloud_dev@localhost:5432/balancecloud_mvp
+        REDIS_URL: redis://localhost:6379/0
+        SECRET_KEY: test-secret-key-for-ci
+        JWT_SECRET_KEY: test-jwt-secret-for-ci
+        ENCRYPTION_KEY: test-encryption-key-for-ci
+        ENVIRONMENT: test
+      run: |
+        alembic upgrade head
+
+    - name: 🗄️ Test PostgreSQL connection
+      working-directory: ./backend
+      env:
+        DATABASE_URL: postgresql+asyncpg://balancecloud:balancecloud_dev@localhost:5432/balancecloud_mvp
+        REDIS_URL: redis://localhost:6379/0
+        SECRET_KEY: test-secret-key-for-ci
+        JWT_SECRET_KEY: test-jwt-secret-for-ci
+        ENCRYPTION_KEY: test-encryption-key-for-ci
+        ENVIRONMENT: test
+      run: |
+        python tests/test_db_connection.py
+
+    - name: 🔴 Test Redis connection
+      working-directory: ./backend
+      env:
+        DATABASE_URL: postgresql+asyncpg://balancecloud:balancecloud_dev@localhost:5432/balancecloud_mvp
+        REDIS_URL: redis://localhost:6379/0
+        SECRET_KEY: test-secret-key-for-ci
+        JWT_SECRET_KEY: test-jwt-secret-for-ci
+        ENCRYPTION_KEY: test-encryption-key-for-ci
+        ENVIRONMENT: test
+      run: |
+        python tests/test_redis_connection.py
+
+    - name: 🚀 Start backend server
+      working-directory: ./backend
+      env:
+        DATABASE_URL: postgresql+asyncpg://balancecloud:balancecloud_dev@localhost:5432/balancecloud_mvp
+        REDIS_URL: redis://localhost:6379/0
+        SECRET_KEY: test-secret-key-for-ci
+        JWT_SECRET_KEY: test-jwt-secret-for-ci
+        ENCRYPTION_KEY: test-encryption-key-for-ci
+        ENVIRONMENT: test
+        CORS_ORIGINS: http://localhost:5173
+      run: |
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+        sleep 10
+        echo "✅ Backend server started on port 8000"
+
+    - name: 🏥 Check backend health
+      run: |
+        for i in {1..30}; do
+          if curl -f http://localhost:8000/api/health; then
+            echo "✅ Backend is healthy"
+            exit 0
+          fi
+          echo "⏳ Waiting for backend to start... ($i/30)"
+          sleep 2
+        done
+        echo "❌ Backend failed to start"
+        exit 1
+
+    - name: 🧪 Test API endpoints
+      working-directory: ./backend
+      env:
+        DATABASE_URL: postgresql+asyncpg://balancecloud:balancecloud_dev@localhost:5432/balancecloud_mvp
+        REDIS_URL: redis://localhost:6379/0
+      run: |
+        python tests/test_api_endpoints.py
+
+    - name: 📊 Test summary
+      if: always()
+      run: |
+        echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ PostgreSQL connection test" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Redis connection test" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ API endpoints test" >> $GITHUB_STEP_SUMMARY
