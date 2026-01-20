@@ -29,5 +29,8 @@ class File(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Storage info - simple local file path
-    storage_path = Column(String, nullable=False)  # Path to encrypted file on disk
+    # Storage info - for chunked storage
+    # Note: For chunked files, storage_path is removed
+    # Chunks are stored in storage_chunks table with references to this file
+    # For backward compatibility with non-chunked files, storage_path can be nullable
+    storage_path = Column(String, nullable=True)  # Legacy: Path to encrypted file (for non-chunked files)

@@ -8,8 +8,11 @@ from app.core.config import settings
 from app.core.database import Base
 
 # Import all models so Alembic can detect them
-from app.models.user import User
+from app.models.cloud_account import CloudAccount
+from app.models.encryption_key import EncryptionKey
 from app.models.file import File
+from app.models.storage_chunk import StorageChunk
+from app.models.user import User
 
 # this is the Alembic Config object
 config = context.config
