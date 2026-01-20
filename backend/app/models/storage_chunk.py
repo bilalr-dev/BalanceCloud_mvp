@@ -23,16 +23,12 @@ class StorageChunk(Base):
         nullable=False,
         index=True,
     )
-    chunk_index = Column(Integer, nullable=False)  # Sequential index: 0, 1, 2, ...
-    chunk_size = Column(Integer, nullable=False)  # Original size before encryption (bytes)
-    encrypted_size = Column(
-        Integer, nullable=False
-    )  # Size of encrypted chunk including GCM tag (bytes)
-    iv = Column(BYTEA, nullable=False)  # 12-byte IV (nonce) for AES-GCM
-    encryption_key_encrypted = Column(
-        String, nullable=False
-    )  # Chunk key encrypted with user's master key (base64)
-    checksum = Column(String(64), nullable=False)  # SHA-256 hash of encrypted chunk (hex)
+    chunk_index = Column(Integer, nullable=False)
+    chunk_size = Column(Integer, nullable=False)
+    encrypted_size = Column(Integer, nullable=False)
+    iv = Column(BYTEA, nullable=False)
+    encryption_key_encrypted = Column(String, nullable=False)
+    checksum = Column(String(64), nullable=False)
     storage_path = Column(String, nullable=False)  # Path to encrypted chunk file on disk
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
