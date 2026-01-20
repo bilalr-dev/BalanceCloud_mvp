@@ -148,7 +148,7 @@ jobs:
     - name: Check import sorting with isort
       working-directory: ./backend
       run: |
-        isort --check-only app/ tests/ || exit 1
+        isort --profile black --check-only app/ tests/ || exit 1
 
     - name: Lint with flake8
       working-directory: ./backend
