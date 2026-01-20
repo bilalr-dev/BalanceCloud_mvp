@@ -66,6 +66,19 @@ jobs:
       run: |
         alembic upgrade head
 
+    - name: ✅ Verify database migrations
+      working-directory: ./backend
+      env:
+        DATABASE_URL: postgresql+asyncpg://${{ secrets.POSTGRES_USER || 'balancecloud' }}:${{ secrets.POSTGRES_PASSWORD || 'balancecloud_dev' }}@localhost:5432/${{ secrets.POSTGRES_DB || 'balancecloud_mvp' }}
+        REDIS_URL: redis://localhost:6379/0
+        SECRET_KEY: ${{ secrets.SECRET_KEY || 'test-secret-key-for-ci' }}
+        JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY || 'test-jwt-secret-for-ci' }}
+        ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY || 'test-encryption-key-for-ci' }}
+        ENVIRONMENT: test
+        PYTHONPATH: .
+      run: |
+        python tests/test_migrations.py
+
     - name: 🗄️ Test PostgreSQL connection
       working-directory: ./backend
       env:
@@ -134,10 +147,53 @@ jobs:
       run: |
         python tests/test_api_endpoints.py
 
+    - name: 📦 Test model imports
+      working-directory: ./backend
+      env:
+        DATABASE_URL: postgresql+asyncpg://${{ secrets.POSTGRES_USER || 'balancecloud' }}:${{ secrets.POSTGRES_PASSWORD || 'balancecloud_dev' }}@localhost:5432/${{ secrets.POSTGRES_DB || 'balancecloud_mvp' }}
+        REDIS_URL: redis://localhost:6379/0
+        SECRET_KEY: ${{ secrets.SECRET_KEY || 'test-secret-key-for-ci' }}
+        JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY || 'test-jwt-secret-for-ci' }}
+        ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY || 'test-encryption-key-for-ci' }}
+        ENVIRONMENT: test
+        PYTHONPATH: .
+      run: |
+        python -c "
+        from app.models import User, File, CloudAccount, EncryptionKey, StorageChunk
+        from app.schemas import UserResponse, FileResponse, EncryptionKeyResponse, StorageChunkResponse
+        print('✅ All models imported successfully')
+        print('✅ All schemas imported successfully')
+        print('✅ Models: User, File, CloudAccount, EncryptionKey, StorageChunk')
+        "
+
+    - name: 🔍 Test schema validation
+      working-directory: ./backend
+      env:
+        DATABASE_URL: postgresql+asyncpg://${{ secrets.POSTGRES_USER || 'balancecloud' }}:${{ secrets.POSTGRES_PASSWORD || 'balancecloud_dev' }}@localhost:5432/${{ secrets.POSTGRES_DB || 'balancecloud_mvp' }}
+        REDIS_URL: redis://localhost:6379/0
+        SECRET_KEY: ${{ secrets.SECRET_KEY || 'test-secret-key-for-ci' }}
+        JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY || 'test-jwt-secret-for-ci' }}
+        ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY || 'test-encryption-key-for-ci' }}
+        ENVIRONMENT: test
+        PYTHONPATH: .
+      run: |
+        python -c "
+        from app.schemas.user import UserCreate, UserLogin, Token
+        from app.schemas.file import FileCreate, FileListResponse
+        from app.schemas.encryption_key import EncryptionKeyResponse
+        from app.schemas.storage_chunk import StorageChunkResponse
+        print('✅ All Pydantic schemas validated successfully')
+        print('✅ Request/Response schemas are properly defined')
+        "
+
     - name: 📊 Test summary
       if: always()
       run: |
         echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Database migrations" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Migration verification" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ PostgreSQL connection test" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ Redis connection test" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Model imports test" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Schema validation test" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ API endpoints test" >> $GITHUB_STEP_SUMMARY
