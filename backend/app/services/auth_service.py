@@ -2,14 +2,16 @@
 Simplified Authentication Service for MVP
 """
 
+import hashlib
 from datetime import datetime, timedelta
 from typing import Optional
 from uuid import uuid4
-import hashlib
+
 import bcrypt
 from jose import JWTError, jwt
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.config import settings
 from app.models.user import User
 

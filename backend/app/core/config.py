@@ -2,10 +2,11 @@
 Configuration for MVP v1 - PostgreSQL and Redis
 """
 
-from pydantic_settings import BaseSettings
-from typing import List
 import os
+from typing import List
+
 from dotenv import load_dotenv
+from pydantic_settings import BaseSettings
 
 load_dotenv()
 

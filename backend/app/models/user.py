@@ -2,10 +2,12 @@
 User Model - PostgreSQL with UUID
 """
 
-from sqlalchemy import Column, String, Boolean, DateTime
-from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
 from uuid import uuid4
+
+from sqlalchemy import Boolean, Column, DateTime, String
+from sqlalchemy.dialects.postgresql import UUID
+
 from app.core.database import Base
 
 

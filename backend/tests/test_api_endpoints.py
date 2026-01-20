@@ -3,10 +3,11 @@
 Test API endpoints
 """
 
-import requests
 import json
 import os
 import sys
+
+import requests
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 

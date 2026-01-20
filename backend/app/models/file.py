@@ -2,10 +2,12 @@
 File Model - PostgreSQL with UUID
 """
 
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Boolean
-from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
 from uuid import uuid4
+
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy.dialects.postgresql import UUID
+
 from app.core.database import Base
 
 

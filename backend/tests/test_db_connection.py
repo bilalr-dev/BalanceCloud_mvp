@@ -4,9 +4,11 @@ Test database connectivity
 """
 
 import asyncio
+
 from sqlalchemy import text
-from app.core.database import engine
+
 from app.core.config import settings
+from app.core.database import engine
 
 
 async def test_connection():

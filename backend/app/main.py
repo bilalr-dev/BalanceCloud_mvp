@@ -4,9 +4,10 @@ BalanceCloud MVP - FastAPI Application Entry Point
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import settings
-from app.core.database import engine, Base
+
 from app.api.routes import auth, files
+from app.core.config import settings
+from app.core.database import Base, engine
 
 # Note: Database tables are created via Alembic migrations
 # Run: alembic upgrade head

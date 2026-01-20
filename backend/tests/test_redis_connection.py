@@ -4,6 +4,7 @@ Test Redis connectivity
 """
 
 import redis
+
 from app.core.config import settings
 
 

@@ -3,12 +3,14 @@ Simplified File Service for MVP - Local storage only
 """
 
 import os
-import aiofiles
 from pathlib import Path
 from typing import Optional
 from uuid import uuid4
+
+import aiofiles
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
+
 from app.core.config import settings
 from app.models.file import File
 from app.services.encryption_service import encryption_service

@@ -2,25 +2,21 @@
 Simplified File Management Routes for MVP
 """
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException,
-    status,
-    UploadFile,
-    File as FastAPIFile,
-    Query,
-)
+import io
+from typing import Optional
+
+from fastapi import APIRouter, Depends
+from fastapi import File as FastAPIFile
+from fastapi import HTTPException, Query, UploadFile, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.database import get_db
-from app.services.file_service import file_service
-from app.services.encryption_service import encryption_service
-from app.schemas.file import FileCreate, FileResponse, FileListResponse
-from app.models.user import User
+
 from app.api.routes.auth import get_current_user
-from typing import Optional
-import io
+from app.core.database import get_db
+from app.models.user import User
+from app.schemas.file import FileCreate, FileListResponse, FileResponse
+from app.services.encryption_service import encryption_service
+from app.services.file_service import file_service
 
 router = APIRouter()
 

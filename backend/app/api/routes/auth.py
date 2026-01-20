@@ -3,12 +3,13 @@ Simplified Authentication Routes for MVP
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.database import get_db
-from app.services.auth_service import auth_service
-from app.schemas.user import UserCreate, UserLogin, UserResponse, Token
 from app.models.user import User
+from app.schemas.user import Token, UserCreate, UserLogin, UserResponse
+from app.services.auth_service import auth_service
 
 router = APIRouter()
 security = HTTPBearer()
