@@ -1,6 +1,7 @@
 """
 Simplified Encryption Service for MVP - AES-256-GCM
 """
+
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -46,12 +47,10 @@ class EncryptionService:
         ciphertext = encrypted_bytes[12:]
         return self.master_aesgcm.decrypt(nonce, ciphertext, None)
 
-    def encrypt_file(
-        self, file_data: bytes, user_key: bytes
-    ) -> Tuple[bytes, bytes]:
+    def encrypt_file(self, file_data: bytes, user_key: bytes) -> Tuple[bytes, bytes]:
         """
         Encrypt file data with user's key
-        
+
         Returns:
             (encrypted_data, nonce)
         """

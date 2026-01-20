@@ -1,7 +1,16 @@
 """
 Simplified File Management Routes for MVP
 """
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File as FastAPIFile, Query
+
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+    UploadFile,
+    File as FastAPIFile,
+    Query,
+)
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
@@ -63,7 +72,9 @@ async def get_file(
     return FileResponse.model_validate(file)
 
 
-@router.post("/folders", response_model=FileResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/folders", response_model=FileResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_folder(
     request: FileCreate,
     current_user: User = Depends(get_current_user),
@@ -85,7 +96,9 @@ async def create_folder(
         )
 
 
-@router.post("/upload", response_model=FileResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/upload", response_model=FileResponse, status_code=status.HTTP_201_CREATED
+)
 async def upload_file(
     file: UploadFile = FastAPIFile(...),
     parent_id: Optional[str] = Query(None),
@@ -96,10 +109,10 @@ async def upload_file(
     try:
         # Read file data
         file_data = await file.read()
-        
+
         # Get user encryption key
         user_key = _get_user_key(str(current_user.id))
-        
+
         # Save encrypted file
         saved_file = await file_service.save_file(
             db=db,
@@ -128,15 +141,19 @@ async def download_file(
     try:
         # Get user encryption key
         user_key = _get_user_key(str(current_user.id))
-        
+
         # Get and decrypt file data
-        file_data = await file_service.get_file_data(db, str(current_user.id), file_id, user_key)
-        
+        file_data = await file_service.get_file_data(
+            db, str(current_user.id), file_id, user_key
+        )
+
         # Get file metadata
         file = await file_service.get_file(db, str(current_user.id), file_id)
         if not file:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
-        
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="File not found"
+            )
+
         # Return as streaming response
         return StreamingResponse(
             io.BytesIO(file_data),

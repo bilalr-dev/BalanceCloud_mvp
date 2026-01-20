@@ -74,6 +74,7 @@ jobs:
         JWT_SECRET_KEY: test-jwt-secret-for-ci
         ENCRYPTION_KEY: test-encryption-key-for-ci
         ENVIRONMENT: test
+        PYTHONPATH: .
       run: |
         python tests/test_db_connection.py
 
@@ -86,6 +87,7 @@ jobs:
         JWT_SECRET_KEY: test-jwt-secret-for-ci
         ENCRYPTION_KEY: test-encryption-key-for-ci
         ENVIRONMENT: test
+        PYTHONPATH: .
       run: |
         python tests/test_redis_connection.py
 
@@ -122,6 +124,8 @@ jobs:
       env:
         DATABASE_URL: postgresql+asyncpg://balancecloud:balancecloud_dev@localhost:5432/balancecloud_mvp
         REDIS_URL: redis://localhost:6379/0
+        PYTHONPATH: .
+        API_BASE_URL: http://localhost:8000
       run: |
         python tests/test_api_endpoints.py
 

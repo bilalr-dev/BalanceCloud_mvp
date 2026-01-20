@@ -1,6 +1,7 @@
 """
 BalanceCloud MVP - FastAPI Application Entry Point
 """
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
@@ -32,19 +33,22 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
 app.include_router(files.router, prefix="/api/files", tags=["files"])
 
+
 @app.on_event("startup")
 async def startup_event():
     # Database tables are created via Alembic migrations
     # Run: alembic upgrade head
     pass
 
+
 @app.get("/")
 async def root():
     return {
         "message": "BalanceCloud MVP API",
         "version": "0.1.0-mvp",
-        "description": "Simplified version - local storage only"
+        "description": "Simplified version - local storage only",
     }
+
 
 @app.get("/api/health")
 async def health_check():

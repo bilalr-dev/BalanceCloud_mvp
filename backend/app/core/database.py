@@ -1,6 +1,7 @@
 """
 Database Configuration - PostgreSQL
 """
+
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 from app.core.config import settings
@@ -25,6 +26,7 @@ AsyncSessionLocal = async_sessionmaker(
 
 # Base class for models
 Base = declarative_base()
+
 
 # Dependency to get database session
 async def get_db():

@@ -65,6 +65,7 @@ jobs:
       env:
         DATABASE_URL: postgresql+asyncpg://balancecloud:balancecloud_dev@localhost:5432/balancecloud_mvp
         REDIS_URL: redis://localhost:6379/0
+        PYTHONPATH: .
       run: |
         python tests/test_db_connection.py
 
@@ -73,6 +74,7 @@ jobs:
       env:
         DATABASE_URL: postgresql+asyncpg://balancecloud:balancecloud_dev@localhost:5432/balancecloud_mvp
         REDIS_URL: redis://localhost:6379/0
+        PYTHONPATH: .
       run: |
         python tests/test_redis_connection.py
 
@@ -95,6 +97,8 @@ jobs:
       env:
         DATABASE_URL: postgresql+asyncpg://balancecloud:balancecloud_dev@localhost:5432/balancecloud_mvp
         REDIS_URL: redis://localhost:6379/0
+        PYTHONPATH: .
+        API_BASE_URL: http://localhost:8000
       run: |
         python tests/test_api_endpoints.py
 
@@ -121,7 +125,8 @@ jobs:
     - name: Check code formatting with black
       working-directory: ./backend
       run: |
-        black --check app/ tests/ || exit 1
+        pip install black
+        black --check app/ tests/
 
     - name: Check import sorting with isort
       working-directory: ./backend

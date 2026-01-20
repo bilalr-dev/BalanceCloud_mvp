@@ -1,6 +1,7 @@
 """
 Simplified Authentication Service for MVP
 """
+
 from datetime import datetime, timedelta
 from typing import Optional
 from uuid import uuid4
@@ -21,8 +22,7 @@ class AuthService:
         """Verify a password against its hash"""
         try:
             return bcrypt.checkpw(
-                plain_password.encode('utf-8'),
-                hashed_password.encode('utf-8')
+                plain_password.encode("utf-8"), hashed_password.encode("utf-8")
             )
         except Exception:
             return False
@@ -31,16 +31,18 @@ class AuthService:
     def get_password_hash(password: str) -> str:
         """Hash a password using bcrypt"""
         # Bcrypt has a 72-byte limit, so we'll hash longer passwords with SHA256 first
-        if len(password.encode('utf-8')) > 72:
-            password_bytes = hashlib.sha256(password.encode('utf-8')).digest()
+        if len(password.encode("utf-8")) > 72:
+            password_bytes = hashlib.sha256(password.encode("utf-8")).digest()
             password = password_bytes.hex()[:72]
-        
+
         salt = bcrypt.gensalt()
-        hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
-        return hashed.decode('utf-8')
+        hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
+        return hashed.decode("utf-8")
 
     @staticmethod
-    def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    def create_access_token(
+        data: dict, expires_delta: Optional[timedelta] = None
+    ) -> str:
         """Create a JWT access token"""
         to_encode = data.copy()
         if expires_delta:
@@ -66,9 +68,7 @@ class AuthService:
         except JWTError:
             return None
 
-    async def register_user(
-        self, db: AsyncSession, email: str, password: str
-    ) -> User:
+    async def register_user(self, db: AsyncSession, email: str, password: str) -> User:
         """Register a new user with email and password"""
         # Check if user already exists
         result = await db.execute(select(User).where(User.email == email))
@@ -93,16 +93,16 @@ class AuthService:
         """Authenticate user with email and password"""
         result = await db.execute(select(User).where(User.email == email))
         user = result.scalar_one_or_none()
-        
+
         if not user:
             return None
-        
+
         if not user.is_active:
             return None
-        
+
         if not self.verify_password(password, user.password_hash):
             return None
-        
+
         return user
 
     async def get_user_by_id(self, db: AsyncSession, user_id: str) -> Optional[User]:

@@ -2,12 +2,14 @@
 """
 Test API endpoints
 """
+
 import requests
 import json
 import os
 import sys
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
+
 
 def test_health_check():
     """Test health check endpoint"""
@@ -25,20 +27,18 @@ def test_health_check():
         print(f"❌ Health check failed: {e}")
         return False
 
+
 def test_register_user():
     """Test user registration"""
     print("\n🔍 Testing user registration...")
     try:
-        data = {
-            "email": "test@example.com",
-            "password": "TestPassword123!"
-        }
+        data = {"email": "test@example.com", "password": "TestPassword123!"}
         response = requests.post(f"{BASE_URL}/api/auth/register", json=data)
         if response.status_code == 201:
             print("✅ User registration passed!")
             result = response.json()
             print(f"   Access token received: {result.get('access_token', '')[:20]}...")
-            return result.get('access_token')
+            return result.get("access_token")
         else:
             print(f"❌ Registration failed: {response.status_code}")
             print(f"   Response: {response.text}")
@@ -47,20 +47,18 @@ def test_register_user():
         print(f"❌ Registration failed: {e}")
         return None
 
+
 def test_login(email, password):
     """Test user login"""
     print("\n🔍 Testing user login...")
     try:
-        data = {
-            "email": email,
-            "password": password
-        }
+        data = {"email": email, "password": password}
         response = requests.post(f"{BASE_URL}/api/auth/login", json=data)
         if response.status_code == 200:
             print("✅ Login passed!")
             result = response.json()
             print(f"   Access token received: {result.get('access_token', '')[:20]}...")
-            return result.get('access_token')
+            return result.get("access_token")
         else:
             print(f"❌ Login failed: {response.status_code}")
             print(f"   Response: {response.text}")
@@ -68,6 +66,7 @@ def test_login(email, password):
     except Exception as e:
         print(f"❌ Login failed: {e}")
         return None
+
 
 def test_get_current_user(token):
     """Test getting current user info"""
@@ -89,6 +88,7 @@ def test_get_current_user(token):
         print(f"❌ Get current user failed: {e}")
         return False
 
+
 def test_list_files(token):
     """Test listing files"""
     print("\n🔍 Testing list files...")
@@ -108,43 +108,45 @@ def test_list_files(token):
         print(f"❌ List files failed: {e}")
         return False
 
+
 def main():
     """Run all tests"""
     print("=" * 60)
     print("🧪 Testing Backend API Endpoints")
     print("=" * 60)
-    
+
     # Test health check
     if not test_health_check():
         print("\n❌ Health check failed. Is the backend running?")
         print("   Start it with: uvicorn app.main:app --reload --port 8000")
         return
-    
+
     # Test registration
     token = test_register_user()
     if not token:
         print("\n❌ Registration failed. Check backend logs.")
         return
-    
+
     # Test login
     login_token = test_login("test@example.com", "TestPassword123!")
     if not login_token:
         print("\n❌ Login failed. Check backend logs.")
         return
-    
+
     # Test get current user
     if not test_get_current_user(token):
         print("\n❌ Get current user failed.")
         return
-    
+
     # Test list files
     if not test_list_files(token):
         print("\n❌ List files failed.")
         return
-    
+
     print("\n" + "=" * 60)
     print("✅ All API tests passed!")
     print("=" * 60)
+
 
 if __name__ == "__main__":
     main()

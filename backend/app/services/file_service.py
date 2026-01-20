@@ -1,6 +1,7 @@
 """
 Simplified File Service for MVP - Local storage only
 """
+
 import os
 import aiofiles
 from pathlib import Path
@@ -160,9 +161,7 @@ class FileService:
         )
         return list(result.scalars().all())
 
-    async def delete_file(
-        self, db: AsyncSession, user_id: str, file_id: str
-    ) -> bool:
+    async def delete_file(self, db: AsyncSession, user_id: str, file_id: str) -> bool:
         """Delete a file"""
         file = await self.get_file(db, user_id, file_id)
         if not file:
