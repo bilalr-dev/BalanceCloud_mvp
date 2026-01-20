@@ -145,7 +145,10 @@ jobs:
       run: |
         python -c "
         from app.models import User, File, CloudAccount, EncryptionKey, StorageChunk
-        from app.schemas import UserResponse, FileResponse, EncryptionKeyResponse, StorageChunkResponse
+        from app.schemas.user import UserResponse
+        from app.schemas.file import FileResponse
+        from app.schemas.encryption_key import EncryptionKeyResponse
+        from app.schemas.storage_chunk import StorageChunkResponse
         print('✅ All models imported successfully')
         print('✅ All schemas imported successfully')
         "
