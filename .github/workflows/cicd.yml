@@ -125,6 +125,10 @@ jobs:
       env:
         DATABASE_URL: postgresql+asyncpg://${{ secrets.POSTGRES_USER || 'balancecloud' }}:${{ secrets.POSTGRES_PASSWORD || 'balancecloud_dev' }}@localhost:5432/${{ secrets.POSTGRES_DB || 'balancecloud_mvp' }}
         REDIS_URL: redis://localhost:6379/0
+        SECRET_KEY: ${{ secrets.SECRET_KEY || 'test-secret-key-for-ci' }}
+        JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY || 'test-jwt-secret-for-ci' }}
+        ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY || 'test-encryption-key-for-ci' }}
+        ENVIRONMENT: test
         PYTHONPATH: .
         API_BASE_URL: http://localhost:8000
       run: |
