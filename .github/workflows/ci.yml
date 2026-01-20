@@ -14,9 +14,9 @@ jobs:
       postgres:
         image: postgres:15-alpine
         env:
-          POSTGRES_USER: balancecloud
-          POSTGRES_PASSWORD: balancecloud_dev
-          POSTGRES_DB: balancecloud_mvp
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER || 'balancecloud' }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || 'balancecloud_dev' }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB || 'balancecloud_mvp' }}
         ports:
           - 5432:5432
         options: >-
@@ -55,7 +55,7 @@ jobs:
     - name: Run database migrations
       working-directory: ./backend
       env:
-        DATABASE_URL: postgresql+asyncpg://balancecloud:balancecloud_dev@localhost:5432/balancecloud_mvp
+        DATABASE_URL: postgresql+asyncpg://${{ secrets.POSTGRES_USER || 'balancecloud' }}:${{ secrets.POSTGRES_PASSWORD || 'balancecloud_dev' }}@localhost:5432/${{ secrets.POSTGRES_DB || 'balancecloud_mvp' }}
         REDIS_URL: redis://localhost:6379/0
       run: |
         alembic upgrade head
@@ -63,7 +63,7 @@ jobs:
     - name: Test PostgreSQL connection
       working-directory: ./backend
       env:
-        DATABASE_URL: postgresql+asyncpg://balancecloud:balancecloud_dev@localhost:5432/balancecloud_mvp
+        DATABASE_URL: postgresql+asyncpg://${{ secrets.POSTGRES_USER || 'balancecloud' }}:${{ secrets.POSTGRES_PASSWORD || 'balancecloud_dev' }}@localhost:5432/${{ secrets.POSTGRES_DB || 'balancecloud_mvp' }}
         REDIS_URL: redis://localhost:6379/0
         PYTHONPATH: .
       run: |
@@ -72,7 +72,7 @@ jobs:
     - name: Test Redis connection
       working-directory: ./backend
       env:
-        DATABASE_URL: postgresql+asyncpg://balancecloud:balancecloud_dev@localhost:5432/balancecloud_mvp
+        DATABASE_URL: postgresql+asyncpg://${{ secrets.POSTGRES_USER || 'balancecloud' }}:${{ secrets.POSTGRES_PASSWORD || 'balancecloud_dev' }}@localhost:5432/${{ secrets.POSTGRES_DB || 'balancecloud_mvp' }}
         REDIS_URL: redis://localhost:6379/0
         PYTHONPATH: .
       run: |
@@ -81,11 +81,11 @@ jobs:
     - name: Start backend server
       working-directory: ./backend
       env:
-        DATABASE_URL: postgresql+asyncpg://balancecloud:balancecloud_dev@localhost:5432/balancecloud_mvp
+        DATABASE_URL: postgresql+asyncpg://${{ secrets.POSTGRES_USER || 'balancecloud' }}:${{ secrets.POSTGRES_PASSWORD || 'balancecloud_dev' }}@localhost:5432/${{ secrets.POSTGRES_DB || 'balancecloud_mvp' }}
         REDIS_URL: redis://localhost:6379/0
-        SECRET_KEY: test-secret-key-for-ci
-        JWT_SECRET_KEY: test-jwt-secret-for-ci
-        ENCRYPTION_KEY: test-encryption-key-for-ci
+        SECRET_KEY: ${{ secrets.SECRET_KEY || 'test-secret-key-for-ci' }}
+        JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY || 'test-jwt-secret-for-ci' }}
+        ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY || 'test-encryption-key-for-ci' }}
         ENVIRONMENT: test
       run: |
         uvicorn app.main:app --host 0.0.0.0 --port 8000 &
@@ -95,7 +95,7 @@ jobs:
     - name: Test API endpoints
       working-directory: ./backend
       env:
-        DATABASE_URL: postgresql+asyncpg://balancecloud:balancecloud_dev@localhost:5432/balancecloud_mvp
+        DATABASE_URL: postgresql+asyncpg://${{ secrets.POSTGRES_USER || 'balancecloud' }}:${{ secrets.POSTGRES_PASSWORD || 'balancecloud_dev' }}@localhost:5432/${{ secrets.POSTGRES_DB || 'balancecloud_mvp' }}
         REDIS_URL: redis://localhost:6379/0
         PYTHONPATH: .
         API_BASE_URL: http://localhost:8000
