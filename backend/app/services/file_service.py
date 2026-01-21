@@ -6,7 +6,8 @@ import base64
 import os
 from pathlib import Path
 from typing import Optional
-from uuid import UUID, uuid4
+from uuid import UUID
+from uuid import uuid4
 
 import aiofiles
 from sqlalchemy import and_, delete, select
@@ -251,6 +252,10 @@ class FileService:
         """
         Get and decrypt file data (reassembles chunks)
         
+        Supports both local storage and cloud storage:
+        - If chunks are in cloud (have cloud_file_id), download from cloud
+        - Otherwise, read from local disk
+        
         Args:
             db: Database session
             user_id: User ID
@@ -288,7 +293,21 @@ class FileService:
                     return encryption_service.decrypt_file(encrypted_data, nonce, user_key)
             raise ValueError("No chunks found for file")
 
-        # Decrypt and reassemble chunks
+        # Check if chunks are stored in cloud
+        first_chunk = chunks[0]
+        if first_chunk.cloud_file_id and first_chunk.cloud_provider:
+            # Chunks are in cloud - use cloud download service
+            # Lazy import to avoid circular dependency
+            from app.services.cloud_download_service import CloudDownloadService, CloudProvider
+            
+            cloud_download_service = CloudDownloadService()
+            provider = CloudProvider(first_chunk.cloud_provider)
+            
+            return await cloud_download_service.download_file_chunks_from_cloud(
+                db, user_id, file_uuid, provider
+            )
+
+        # Chunks are stored locally - read from disk
         decrypted_chunks = []
         for chunk in chunks:
             # Derive chunk key (per contract - keys are derived deterministically)
