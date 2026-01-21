@@ -16,6 +16,7 @@ from app.core.config import settings
 from app.models.cloud_account import CloudAccount
 from app.models.file import File
 from app.models.storage_chunk import StorageChunk
+from app.services.cloud_upload_service import CloudUploadService
 from app.services.encryption_service import encryption_service
 from app.services.file_service import file_service
 
@@ -101,13 +102,10 @@ class CloudDownloadService:
             )
             
             # Refresh token based on provider
+            upload_service = CloudUploadService()
             if cloud_account.provider == CloudProvider.GOOGLE_DRIVE.value:
-                from app.services.cloud_upload_service import CloudUploadService
-                upload_service = CloudUploadService()
                 new_tokens = await upload_service._refresh_google_token(refresh_token)
             elif cloud_account.provider == CloudProvider.ONEDRIVE.value:
-                from app.services.cloud_upload_service import CloudUploadService
-                upload_service = CloudUploadService()
                 new_tokens = await upload_service._refresh_onedrive_token(refresh_token)
             else:
                 raise ValueError(f"Unsupported provider: {cloud_account.provider}")

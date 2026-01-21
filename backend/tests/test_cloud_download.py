@@ -2,9 +2,10 @@
 Tests for Cloud Download Service
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
+
+import pytest
 
 from app.models.cloud_account import CloudAccount
 from app.models.file import File
