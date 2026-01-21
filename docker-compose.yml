@@ -11,10 +11,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U postgres || pg_isready"]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
     restart: unless-stopped
 
   redis:
@@ -39,10 +40,7 @@ services:
     volumes:
       - ./backend/storage:/app/storage
       - ./backend/data:/app/data
-    # Optional: Load from .env file if it exists (for local overrides)
-    # Create .env file from env.example if you want to customize
-    # env_file:
-    #   - .env
+      - ./backend/staging:/app/staging
     environment:
       # Database - constructed from service names (Docker Compose networking)
       # REQUIRED: Set POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB in .env file
@@ -53,7 +51,10 @@ services:
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       # Application settings
-      - STORAGE_PATH=${STORAGE_PATH:-./storage}
+      - STORAGE_PATH=${STORAGE_PATH:-/app/storage}
+      - STAGING_PATH=${STAGING_PATH:-/app/staging}
+      - STAGING_UPLOADS_PATH=${STAGING_UPLOADS_PATH:-/app/staging/uploads}
+      - STAGING_ENCRYPTED_PATH=${STAGING_ENCRYPTED_PATH:-/app/staging/encrypted}
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5173}
       - ENVIRONMENT=${ENVIRONMENT:-development}
       # Rate limiting

@@ -6,10 +6,10 @@ import base64
 import os
 from pathlib import Path
 from typing import Optional
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import aiofiles
-from sqlalchemy import and_, select
+from sqlalchemy import and_, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -195,8 +195,14 @@ class FileService:
                 # Final storage path
                 chunk_storage_path = user_storage / f"{file_id}_{chunk_info['chunk_index']}.enc"
                 
-                # Move from staging to final storage
-                chunk_info["staging_path"].rename(chunk_storage_path)
+                # Copy from staging to final storage (rename fails across filesystems in Docker)
+                async with aiofiles.open(chunk_info["staging_path"], "rb") as src:
+                    async with aiofiles.open(chunk_storage_path, "wb") as dst:
+                        content = await src.read()
+                        await dst.write(content)
+                
+                # Delete staging file after successful copy
+                chunk_info["staging_path"].unlink()
                 
                 # Store chunk metadata (aligned with contract)
                 storage_chunk = StorageChunk(
@@ -261,9 +267,10 @@ class FileService:
             raise ValueError("Cannot read folder as file")
 
         # Get all chunks for this file, ordered by chunk_index
+        file_uuid = UUID(file_id)
         result = await db.execute(
             select(StorageChunk)
-            .where(StorageChunk.file_id == file_id)
+            .where(StorageChunk.file_id == file_uuid)
             .order_by(StorageChunk.chunk_index)
         )
         chunks = result.scalars().all()
@@ -290,7 +297,13 @@ class FileService:
             )
             
             # Read encrypted chunk from disk
-            async with aiofiles.open(chunk.storage_path, "rb") as f:
+            chunk_path = Path(chunk.storage_path)
+            if not chunk_path.exists():
+                raise ValueError(
+                    f"Chunk file not found on disk: {chunk.storage_path} "
+                    f"(chunk_index: {chunk.chunk_index})"
+                )
+            async with aiofiles.open(chunk_path, "rb") as f:
                 encrypted_data = await f.read()
             
             # Verify checksum (per contract - checksum is hex string)
@@ -319,24 +332,26 @@ class FileService:
 
     async def delete_file(self, db: AsyncSession, user_id: str, file_id: str) -> bool:
         """Delete a file and all its chunks"""
+        
         file = await self.get_file(db, user_id, file_id)
         if not file:
             return False
 
         # Delete chunks if not a folder
         if not file.is_folder:
-            # Get all chunks
+            # Get all chunks to delete their files from disk
+            file_uuid = UUID(file_id)
             result = await db.execute(
-                select(StorageChunk).where(StorageChunk.file_id == file_id)
+                select(StorageChunk).where(StorageChunk.file_id == file_uuid)
             )
             chunks = result.scalars().all()
             
             # Delete chunk files from disk
+            # Note: Chunks will be auto-deleted from DB via CASCADE when file is deleted
             for chunk in chunks:
                 chunk_path = Path(chunk.storage_path)
                 if chunk_path.exists():
-                    os.remove(chunk_path)
-                db.delete(chunk)
+                    chunk_path.unlink()
             
             # Fallback: delete legacy non-chunked file
             if file.storage_path:
@@ -347,7 +362,12 @@ class FileService:
                 if nonce_path.exists():
                     os.remove(nonce_path)
 
-        db.delete(file)
+        # Delete the file record using direct DELETE statement
+        # CASCADE will automatically delete associated chunks
+        file_uuid = UUID(file_id)
+        await db.execute(
+            delete(File).where(File.id == file_uuid, File.user_id == UUID(user_id))
+        )
         await db.commit()
         return True
 
