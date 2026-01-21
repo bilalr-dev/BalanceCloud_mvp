@@ -167,18 +167,88 @@ class CloudUploadService:
         await db.commit()
 
     async def _refresh_google_token(self, refresh_token: str) -> dict:
-        """Refresh Google Drive access token"""
-        # TODO: Implement Google token refresh
-        # This requires Google OAuth client ID and secret
-        # For now, raise NotImplementedError
-        raise NotImplementedError("Google token refresh not yet implemented")
+        """
+        Refresh Google Drive access token
+        
+        Args:
+            refresh_token: Google refresh token
+            
+        Returns:
+            {
+                "access_token": "...",
+                "refresh_token": "...",  # May be same as input if not provided
+                "expires_in": 3600
+            }
+        """
+        if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+            raise ValueError(
+                "Google OAuth credentials not configured. "
+                "Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in your environment variables."
+            )
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "client_id": settings.GOOGLE_CLIENT_ID,
+                    "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                    "refresh_token": refresh_token,
+                    "grant_type": "refresh_token",
+                },
+            )
+            response.raise_for_status()
+            
+            result = response.json()
+            return {
+                "access_token": result["access_token"],
+                "refresh_token": result.get("refresh_token", refresh_token),  # Google may not return new refresh token
+                "expires_in": result.get("expires_in", 3600),
+            }
 
     async def _refresh_onedrive_token(self, refresh_token: str) -> dict:
-        """Refresh OneDrive access token"""
-        # TODO: Implement OneDrive token refresh
-        # This requires Microsoft app ID and secret
-        # For now, raise NotImplementedError
-        raise NotImplementedError("OneDrive token refresh not yet implemented")
+        """
+        Refresh OneDrive access token
+        
+        Args:
+            refresh_token: Microsoft refresh token
+            
+        Returns:
+            {
+                "access_token": "...",
+                "refresh_token": "...",  # May be same as input if not provided
+                "expires_in": 3600
+            }
+        """
+        if not settings.MICROSOFT_CLIENT_ID or not settings.MICROSOFT_CLIENT_SECRET:
+            raise ValueError(
+                "Microsoft OAuth credentials not configured. "
+                "Please set MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET in your environment variables."
+            )
+        
+        # Microsoft OneDrive scopes
+        scopes = "Files.ReadWrite offline_access"
+        
+        token_url = f"https://login.microsoftonline.com/{settings.MICROSOFT_TENANT_ID}/oauth2/v2.0/token"
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                token_url,
+                data={
+                    "client_id": settings.MICROSOFT_CLIENT_ID,
+                    "client_secret": settings.MICROSOFT_CLIENT_SECRET,
+                    "refresh_token": refresh_token,
+                    "grant_type": "refresh_token",
+                    "scope": scopes,
+                },
+            )
+            response.raise_for_status()
+            
+            result = response.json()
+            return {
+                "access_token": result["access_token"],
+                "refresh_token": result.get("refresh_token", refresh_token),  # Microsoft may not return new refresh token
+                "expires_in": result.get("expires_in", 3600),
+            }
 
     async def upload_file_to_google_drive(
         self,
