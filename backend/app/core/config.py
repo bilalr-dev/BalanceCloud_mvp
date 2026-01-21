@@ -51,6 +51,11 @@ class Settings(BaseSettings):
 
     # File Storage - Simple local directory
     STORAGE_PATH: str = os.getenv("STORAGE_PATH", "./storage")
+    
+    # Staging Area - Temporary storage for uploads and encrypted chunks
+    STAGING_PATH: str = os.getenv("STAGING_PATH", "./staging")
+    STAGING_UPLOADS_PATH: str = os.getenv("STAGING_UPLOADS_PATH", "./staging/uploads")
+    STAGING_ENCRYPTED_PATH: str = os.getenv("STAGING_ENCRYPTED_PATH", "./staging/encrypted")
 
     # Environment
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
