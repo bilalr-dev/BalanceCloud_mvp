@@ -1,7 +1,8 @@
 """
-Simplified File Service for MVP - Local storage only
+File Service - Chunked encryption storage
 """
 
+import base64
 import os
 from pathlib import Path
 from typing import Optional
@@ -13,15 +14,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.models.file import File
+from app.models.storage_chunk import StorageChunk
 from app.services.encryption_service import encryption_service
 
 
 class FileService:
-    """Simplified file service - local storage with encryption"""
+    """File service with chunked encryption storage"""
 
     def __init__(self):
         self.storage_path = Path(settings.STORAGE_PATH)
         self.storage_path.mkdir(parents=True, exist_ok=True)
+        self.chunk_size = 10 * 1024 * 1024  # 10MB chunks
 
     def _get_user_storage_path(self, user_id: str) -> Path:
         """Get storage directory for a user"""
@@ -76,7 +79,25 @@ class FileService:
         parent_id: Optional[str] = None,
         user_key: bytes = None,
     ) -> File:
-        """Save an encrypted file"""
+        """
+        Save a file with chunked encryption
+        
+        Args:
+            db: Database session
+            user_id: User ID
+            name: File name
+            file_data: File data bytes
+            mime_type: MIME type
+            parent_id: Parent folder ID (optional)
+            user_key: User encryption key (if None, fetched from DB)
+            
+        Returns:
+            File model instance
+        """
+        # Get user encryption key from database
+        if user_key is None:
+            user_key = await encryption_service.get_or_create_user_encryption_key(db, user_id)
+
         # Build path
         if parent_id:
             parent = await self.get_file(db, user_id, parent_id)
@@ -86,25 +107,8 @@ class FileService:
         else:
             path = f"/{name}"
 
-        # Encrypt file
-        if user_key is None:
-            # Generate a simple key for MVP (in production, get from user's encryption key)
-            user_key = encryption_service.generate_user_key()
-
-        encrypted_data, nonce = encryption_service.encrypt_file(file_data, user_key)
-
-        # Save to disk
+        # Create file record
         file_id = uuid4()
-        user_storage = self._get_user_storage_path(str(user_id))
-        storage_file_path = user_storage / f"{file_id}.enc"
-        nonce_file_path = user_storage / f"{file_id}.nonce"
-
-        async with aiofiles.open(storage_file_path, "wb") as f:
-            await f.write(encrypted_data)
-        async with aiofiles.open(nonce_file_path, "wb") as f:
-            await f.write(nonce)
-
-        # Store metadata
         file = File(
             id=file_id,
             user_id=user_id,
@@ -114,9 +118,50 @@ class FileService:
             mime_type=mime_type,
             is_folder=False,
             parent_id=parent_id,
-            storage_path=str(storage_file_path),
+            storage_path=None,  # Chunked files don't use storage_path
         )
         db.add(file)
+        await db.flush()  # Flush to get file_id
+
+        # Chunk the file
+        chunks = encryption_service.chunk_file(file_data, self.chunk_size)
+        
+        # Encrypt and save each chunk
+        user_storage = self._get_user_storage_path(str(user_id))
+        for chunk_index, chunk_data in enumerate(chunks):
+            # Derive chunk-specific key
+            chunk_key = encryption_service.derive_chunk_key(
+                user_key, str(file_id), chunk_index
+            )
+            
+            # Encrypt chunk
+            encrypted_data, iv, checksum_hex = encryption_service.encrypt_file_chunk(
+                chunk_data, chunk_key
+            )
+            
+            # Encrypt chunk key with user key for storage (per contract)
+            encrypted_chunk_key, chunk_key_salt = await encryption_service.encrypt_user_key(
+                chunk_key
+            )
+            
+            # Save encrypted chunk to disk
+            chunk_storage_path = user_storage / f"{file_id}_{chunk_index}.enc"
+            async with aiofiles.open(chunk_storage_path, "wb") as f:
+                await f.write(encrypted_data)
+            
+            # Store chunk metadata (aligned with contract)
+            storage_chunk = StorageChunk(
+                file_id=file_id,
+                chunk_index=chunk_index,
+                chunk_size=len(chunk_data),
+                encrypted_size=len(encrypted_data),
+                iv=iv,
+                encryption_key_encrypted=base64.b64encode(encrypted_chunk_key).decode("utf-8"),  # Encrypted chunk key (per contract)
+                checksum=checksum_hex,  # Hex string (per contract)
+                storage_path=str(chunk_storage_path),
+            )
+            db.add(storage_chunk)
+
         await db.commit()
         await db.refresh(file)
         return file
@@ -133,24 +178,69 @@ class FileService:
     async def get_file_data(
         self, db: AsyncSession, user_id: str, file_id: str, user_key: bytes
     ) -> bytes:
-        """Get and decrypt file data"""
+        """
+        Get and decrypt file data (reassembles chunks)
+        
+        Args:
+            db: Database session
+            user_id: User ID
+            file_id: File ID
+            user_key: User encryption key
+            
+        Returns:
+            Decrypted file data bytes
+        """
         file = await self.get_file(db, user_id, file_id)
         if not file:
             raise ValueError("File not found")
         if file.is_folder:
             raise ValueError("Cannot read folder as file")
 
-        # Read encrypted data and nonce
-        storage_path = Path(file.storage_path)
-        nonce_path = storage_path.parent / f"{str(file.id)}.nonce"
+        # Get all chunks for this file, ordered by chunk_index
+        result = await db.execute(
+            select(StorageChunk)
+            .where(StorageChunk.file_id == file_id)
+            .order_by(StorageChunk.chunk_index)
+        )
+        chunks = result.scalars().all()
 
-        async with aiofiles.open(storage_path, "rb") as f:
-            encrypted_data = await f.read()
-        async with aiofiles.open(nonce_path, "rb") as f:
-            nonce = await f.read()
+        if not chunks:
+            # Fallback: try legacy non-chunked storage
+            if file.storage_path:
+                storage_path = Path(file.storage_path)
+                nonce_path = storage_path.parent / f"{str(file.id)}.nonce"
+                if storage_path.exists():
+                    async with aiofiles.open(storage_path, "rb") as f:
+                        encrypted_data = await f.read()
+                    async with aiofiles.open(nonce_path, "rb") as f:
+                        nonce = await f.read()
+                    return encryption_service.decrypt_file(encrypted_data, nonce, user_key)
+            raise ValueError("No chunks found for file")
 
-        # Decrypt
-        return encryption_service.decrypt_file(encrypted_data, nonce, user_key)
+        # Decrypt and reassemble chunks
+        decrypted_chunks = []
+        for chunk in chunks:
+            # Derive chunk key (per contract - keys are derived deterministically)
+            chunk_key = encryption_service.derive_chunk_key(
+                user_key, str(file_id), chunk.chunk_index
+            )
+            
+            # Read encrypted chunk from disk
+            async with aiofiles.open(chunk.storage_path, "rb") as f:
+                encrypted_data = await f.read()
+            
+            # Verify checksum (per contract - checksum is hex string)
+            if not encryption_service.verify_checksum(encrypted_data, chunk.checksum):
+                raise ValueError(f"Checksum verification failed for chunk {chunk.chunk_index}")
+            
+            # Decrypt chunk
+            decrypted_chunk = encryption_service.decrypt_file_chunk(
+                encrypted_data, chunk_key, chunk.iv
+            )
+            decrypted_chunks.append(decrypted_chunk)
+
+        # Reassemble file
+        return b"".join(decrypted_chunks)
 
     async def list_files(
         self, db: AsyncSession, user_id: str, parent_id: Optional[str] = None
@@ -164,19 +254,34 @@ class FileService:
         return list(result.scalars().all())
 
     async def delete_file(self, db: AsyncSession, user_id: str, file_id: str) -> bool:
-        """Delete a file"""
+        """Delete a file and all its chunks"""
         file = await self.get_file(db, user_id, file_id)
         if not file:
             return False
 
-        # Delete from disk if not a folder
+        # Delete chunks if not a folder
         if not file.is_folder:
-            storage_path = Path(file.storage_path)
-            nonce_path = storage_path.parent / f"{str(file.id)}.nonce"
-            if storage_path.exists():
-                os.remove(storage_path)
-            if nonce_path.exists():
-                os.remove(nonce_path)
+            # Get all chunks
+            result = await db.execute(
+                select(StorageChunk).where(StorageChunk.file_id == file_id)
+            )
+            chunks = result.scalars().all()
+            
+            # Delete chunk files from disk
+            for chunk in chunks:
+                chunk_path = Path(chunk.storage_path)
+                if chunk_path.exists():
+                    os.remove(chunk_path)
+                db.delete(chunk)
+            
+            # Fallback: delete legacy non-chunked file
+            if file.storage_path:
+                storage_path = Path(file.storage_path)
+                nonce_path = storage_path.parent / f"{str(file.id)}.nonce"
+                if storage_path.exists():
+                    os.remove(storage_path)
+                if nonce_path.exists():
+                    os.remove(nonce_path)
 
         db.delete(file)
         await db.commit()
