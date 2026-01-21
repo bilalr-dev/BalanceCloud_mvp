@@ -2,8 +2,9 @@
 Tests for chunked encryption functionality
 """
 
-import pytest
 from uuid import uuid4
+
+import pytest
 
 from app.models.file import File
 from app.models.storage_chunk import StorageChunk
