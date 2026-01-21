@@ -135,8 +135,13 @@ class FileService:
             )
             
             # Encrypt chunk
-            encrypted_data, iv, checksum = encryption_service.encrypt_file_chunk(
+            encrypted_data, iv, checksum_hex = encryption_service.encrypt_file_chunk(
                 chunk_data, chunk_key
+            )
+            
+            # Encrypt chunk key with user key for storage (per contract)
+            encrypted_chunk_key, chunk_key_salt = await encryption_service.encrypt_user_key(
+                chunk_key
             )
             
             # Save encrypted chunk to disk
@@ -144,17 +149,15 @@ class FileService:
             async with aiofiles.open(chunk_storage_path, "wb") as f:
                 await f.write(encrypted_data)
             
-            # Store chunk metadata
-            # Note: encryption_key_encrypted is stored but not used (chunk key is derived)
-            # This field is kept for future use or compatibility
+            # Store chunk metadata (aligned with contract)
             storage_chunk = StorageChunk(
                 file_id=file_id,
                 chunk_index=chunk_index,
                 chunk_size=len(chunk_data),
                 encrypted_size=len(encrypted_data),
                 iv=iv,
-                encryption_key_encrypted=base64.b64encode(chunk_key).decode("utf-8"),  # Store plain for now (will be encrypted in future)
-                checksum=base64.b64encode(checksum).decode("utf-8"),
+                encryption_key_encrypted=base64.b64encode(encrypted_chunk_key).decode("utf-8"),  # Encrypted chunk key (per contract)
+                checksum=checksum_hex,  # Hex string (per contract)
                 storage_path=str(chunk_storage_path),
             )
             db.add(storage_chunk)
@@ -217,10 +220,7 @@ class FileService:
         # Decrypt and reassemble chunks
         decrypted_chunks = []
         for chunk in chunks:
-            # Decrypt chunk key
-            encrypted_chunk_key_bytes = base64.b64decode(chunk.encryption_key_encrypted)
-            # Note: We need salt for decrypt_user_key, but we're storing encrypted chunk key
-            # For now, derive chunk key directly (same as encryption)
+            # Derive chunk key (per contract - keys are derived deterministically)
             chunk_key = encryption_service.derive_chunk_key(
                 user_key, str(file_id), chunk.chunk_index
             )
@@ -228,6 +228,10 @@ class FileService:
             # Read encrypted chunk from disk
             async with aiofiles.open(chunk.storage_path, "rb") as f:
                 encrypted_data = await f.read()
+            
+            # Verify checksum (per contract - checksum is hex string)
+            if not encryption_service.verify_checksum(encrypted_data, chunk.checksum):
+                raise ValueError(f"Checksum verification failed for chunk {chunk.chunk_index}")
             
             # Decrypt chunk
             decrypted_chunk = encryption_service.decrypt_file_chunk(

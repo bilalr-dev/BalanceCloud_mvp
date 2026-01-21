@@ -159,10 +159,11 @@ class EncryptionService:
         info = f"{file_id}:{chunk_index}".encode("utf-8")
         
         # Derive chunk key using HKDF
+        # Contract: Salt = User key (full user key used as salt)
         hkdf = HKDF(
             algorithm=hashes.SHA256(),
             length=32,  # 256 bits
-            salt=user_key[:16],  # Use first 16 bytes of user key as salt
+            salt=user_key,  # Use full user key as salt (per contract)
             info=info,
             backend=default_backend(),
         )
@@ -218,9 +219,10 @@ class EncryptionService:
         # GCM tag is automatically appended to ciphertext (last 16 bytes)
         # Extract tag for checksum
         encrypted_data = ciphertext  # Full ciphertext with tag
-        checksum = ciphertext[-16:]  # GCM tag (last 16 bytes)
+        checksum_bytes = ciphertext[-16:]  # GCM tag (last 16 bytes)
+        checksum_hex = checksum_bytes.hex()  # Convert to hex string (per contract)
         
-        return (encrypted_data, iv, checksum)
+        return (encrypted_data, iv, checksum_hex)
 
     def decrypt_file_chunk(
         self, encrypted_data: bytes, chunk_key: bytes, iv: bytes
@@ -245,6 +247,20 @@ class EncryptionService:
         # Tag is the last 16 bytes of encrypted_data
         decrypted_data = aesgcm.decrypt(iv, encrypted_data, None)
         return decrypted_data
+    
+    def verify_checksum(self, encrypted_data: bytes, expected_checksum: str) -> bool:
+        """
+        Verify checksum of encrypted chunk data
+        
+        Args:
+            encrypted_data: Encrypted chunk data (ciphertext + GCM tag)
+            expected_checksum: Expected checksum (hex string)
+            
+        Returns:
+            True if checksum matches
+        """
+        actual_checksum = encrypted_data[-16:].hex()
+        return actual_checksum == expected_checksum
 
     # Token Encryption (for OAuth tokens) - Aligned with Contract
 
