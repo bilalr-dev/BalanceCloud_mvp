@@ -29,3 +29,4 @@ redis==5.0.1
 
 # Testing (optional, for test scripts)
 requests==2.31.0
+httpx==0.25.2
