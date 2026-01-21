@@ -113,10 +113,20 @@ jobs:
         JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY || 'test-jwt-secret-for-ci' }}
         ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY || 'test-encryption-key-for-ci' }}
         ENVIRONMENT: test
+        PYTHONPATH: .
       run: |
         uvicorn app.main:app --host 0.0.0.0 --port 8000 &
-        sleep 5
-        echo "Backend server started"
+        echo "Waiting for backend server to start..."
+        for i in {1..30}; do
+          if curl -f http://localhost:8000/api/health > /dev/null 2>&1; then
+            echo "Backend server is ready!"
+            exit 0
+          fi
+          echo "Attempt $i/30: Server not ready yet, waiting..."
+          sleep 2
+        done
+        echo "Backend server failed to start"
+        exit 1
 
     - name: Test API endpoints
       working-directory: ./backend
@@ -174,7 +184,8 @@ jobs:
 
     - name: Check backend health
       run: |
-        curl -f http://localhost:8000/api/health || exit 1
+        # Health check is already done in "Start backend server" step
+        curl -f http://localhost:8000/api/health || (echo "Health check failed" && exit 1)
 
   lint:
     runs-on: ubuntu-latest
