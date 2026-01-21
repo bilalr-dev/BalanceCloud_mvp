@@ -2,6 +2,8 @@
 Simplified Authentication Routes for MVP
 """
 
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,14 +14,20 @@ from app.schemas.user import Token, UserCreate, UserLogin, UserResponse
 from app.services.auth_service import auth_service
 
 router = APIRouter()
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     db: AsyncSession = Depends(get_db),
 ) -> User:
     """Dependency to get current authenticated user"""
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     token = credentials.credentials
     payload = auth_service.verify_token(token)
 
@@ -98,4 +106,9 @@ async def get_current_user_info(
     current_user: User = Depends(get_current_user),
 ):
     """Get current user information"""
-    return UserResponse.model_validate(current_user)
+    return UserResponse(
+        id=str(current_user.id),
+        email=current_user.email,
+        is_active=getattr(current_user, 'is_active', True),
+        created_at=current_user.created_at,
+    )

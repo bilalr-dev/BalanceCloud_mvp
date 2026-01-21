@@ -21,17 +21,6 @@ from app.services.file_service import file_service
 router = APIRouter()
 
 
-# Simple in-memory user key storage for MVP (in production, store encrypted in DB)
-_user_keys: dict[str, bytes] = {}
-
-
-def _get_user_key(user_id: str) -> bytes:
-    """Get or create user encryption key"""
-    if user_id not in _user_keys:
-        _user_keys[user_id] = encryption_service.generate_user_key()
-    return _user_keys[user_id]
-
-
 @router.get("", response_model=FileListResponse)
 async def list_files(
     parent_id: Optional[str] = Query(None, description="Parent folder ID"),
@@ -42,7 +31,21 @@ async def list_files(
     try:
         files = await file_service.list_files(db, str(current_user.id), parent_id)
         return FileListResponse(
-            files=[FileResponse.model_validate(file) for file in files],
+            files=[
+                FileResponse(
+                    id=str(file.id),
+                    user_id=str(file.user_id),
+                    name=file.name,
+                    path=file.path,
+                    size=file.size,
+                    mime_type=file.mime_type,
+                    is_folder=file.is_folder,
+                    parent_id=str(file.parent_id) if file.parent_id else None,
+                    created_at=file.created_at,
+                    updated_at=file.updated_at,
+                )
+                for file in files
+            ],
             total=len(files),
         )
     except Exception as e:
@@ -65,7 +68,18 @@ async def get_file(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="File not found",
         )
-    return FileResponse.model_validate(file)
+    return FileResponse(
+        id=str(file.id),
+        user_id=str(file.user_id),
+        name=file.name,
+        path=file.path,
+        size=file.size,
+        mime_type=file.mime_type,
+        is_folder=file.is_folder,
+        parent_id=str(file.parent_id) if file.parent_id else None,
+        created_at=file.created_at,
+        updated_at=file.updated_at,
+    )
 
 
 @router.post(
@@ -84,7 +98,18 @@ async def create_folder(
             name=request.name,
             parent_id=request.parent_id,
         )
-        return FileResponse.model_validate(folder)
+        return FileResponse(
+            id=str(folder.id),
+            user_id=str(folder.user_id),
+            name=folder.name,
+            path=folder.path,
+            size=folder.size,
+            mime_type=folder.mime_type,
+            is_folder=folder.is_folder,
+            parent_id=str(folder.parent_id) if folder.parent_id else None,
+            created_at=folder.created_at,
+            updated_at=folder.updated_at,
+        )
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -116,7 +141,9 @@ async def upload_file(
         file_data = await file.read()
 
         # Get user encryption key (aligned with contract)
-        user_key = await _get_user_key(str(current_user.id), db)
+        user_key = await encryption_service.get_or_create_user_encryption_key(
+            db, str(current_user.id)
+        )
 
         # Save encrypted file (uses staging area internally)
         saved_file = await file_service.save_file(
@@ -128,7 +155,18 @@ async def upload_file(
             parent_id=parent_id,
             user_key=user_key,
         )
-        return FileResponse.model_validate(saved_file)
+        return FileResponse(
+            id=str(saved_file.id),
+            user_id=str(saved_file.user_id),
+            name=saved_file.name,
+            path=saved_file.path,
+            size=saved_file.size,
+            mime_type=saved_file.mime_type,
+            is_folder=saved_file.is_folder,
+            parent_id=str(saved_file.parent_id) if saved_file.parent_id else None,
+            created_at=saved_file.created_at,
+            updated_at=saved_file.updated_at,
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -145,7 +183,9 @@ async def download_file(
     """Download a file"""
     try:
         # Get user encryption key (aligned with contract)
-        user_key = await _get_user_key(str(current_user.id), db)
+        user_key = await encryption_service.get_or_create_user_encryption_key(
+            db, str(current_user.id)
+        )
 
         # Get and decrypt file data
         file_data = await file_service.get_file_data(
