@@ -6,10 +6,10 @@ import base64
 import os
 from pathlib import Path
 from typing import Optional
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import aiofiles
-from sqlalchemy import and_, select
+from sqlalchemy import and_, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -267,7 +267,6 @@ class FileService:
             raise ValueError("Cannot read folder as file")
 
         # Get all chunks for this file, ordered by chunk_index
-        from uuid import UUID
         file_uuid = UUID(file_id)
         result = await db.execute(
             select(StorageChunk)
@@ -333,8 +332,6 @@ class FileService:
 
     async def delete_file(self, db: AsyncSession, user_id: str, file_id: str) -> bool:
         """Delete a file and all its chunks"""
-        from uuid import UUID
-        from sqlalchemy import delete
         
         file = await self.get_file(db, user_id, file_id)
         if not file:
