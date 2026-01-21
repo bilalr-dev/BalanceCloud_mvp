@@ -33,6 +33,21 @@ class Settings(BaseSettings):
     # REQUIRED: Set via environment variables
     ENCRYPTION_KEY: str = os.getenv("ENCRYPTION_KEY", "")
 
+    # OAuth - Google Drive
+    GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")
+    GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
+    GOOGLE_REDIRECT_URI: str = os.getenv(
+        "GOOGLE_REDIRECT_URI", "http://localhost:8000/api/cloud-accounts/callback/google_drive"
+    )
+
+    # OAuth - Microsoft OneDrive
+    MICROSOFT_CLIENT_ID: str = os.getenv("MICROSOFT_CLIENT_ID", "")
+    MICROSOFT_CLIENT_SECRET: str = os.getenv("MICROSOFT_CLIENT_SECRET", "")
+    MICROSOFT_REDIRECT_URI: str = os.getenv(
+        "MICROSOFT_REDIRECT_URI", "http://localhost:8000/api/cloud-accounts/callback/onedrive"
+    )
+    MICROSOFT_TENANT_ID: str = os.getenv("MICROSOFT_TENANT_ID", "common")
+
     # CORS
     CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "http://localhost:5173")
 
