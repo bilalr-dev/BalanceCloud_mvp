@@ -9,6 +9,9 @@ from typing import Optional
 from uuid import UUID
 
 import httpx
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -75,10 +78,6 @@ class CloudDownloadService:
             Decrypted access token
         """
         # Decrypt access token (same logic as upload service)
-        from cryptography.hazmat.backends import default_backend
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-        
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
