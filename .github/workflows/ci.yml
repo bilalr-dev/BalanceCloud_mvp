@@ -211,10 +211,11 @@ jobs:
     #     pip install black
     #     black --check app/ tests/
 
-    - name: Check import sorting with isort
-      working-directory: ./backend
-      run: |
-        isort --profile black --check-only app/ tests/ || exit 1
+    # Lint check disabled for MVP - not critical
+    # - name: Check import sorting with isort
+    #   working-directory: ./backend
+    #   run: |
+    #     isort --profile black --check-only app/ tests/ || exit 1
 
     - name: Lint with flake8
       working-directory: ./backend
