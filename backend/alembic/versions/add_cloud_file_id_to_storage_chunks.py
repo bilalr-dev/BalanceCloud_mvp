@@ -9,7 +9,7 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision = "add_cloud_file_id_to_storage_chunks"
+revision = "add_cloud_file_id"  # Shortened to fit VARCHAR(32) constraint
 down_revision = "add_cloud_encryption_chunks"
 branch_labels = None
 depends_on = None
