@@ -59,6 +59,15 @@ services:
       # Rate limiting
       - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
       - RATE_LIMIT_REQUESTS_PER_MINUTE=${RATE_LIMIT_REQUESTS_PER_MINUTE:-60}
+      # OAuth - Google Drive (Optional, for cloud uploads)
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:8000/api/cloud-accounts/callback/google_drive}
+      # OAuth - Microsoft OneDrive (Optional, for cloud uploads)
+      - MICROSOFT_CLIENT_ID=${MICROSOFT_CLIENT_ID:-}
+      - MICROSOFT_CLIENT_SECRET=${MICROSOFT_CLIENT_SECRET:-}
+      - MICROSOFT_REDIRECT_URI=${MICROSOFT_REDIRECT_URI:-http://localhost:8000/api/cloud-accounts/callback/onedrive}
+      - MICROSOFT_TENANT_ID=${MICROSOFT_TENANT_ID:-common}
     depends_on:
       postgres:
         condition: service_healthy
