@@ -30,6 +30,8 @@ class StorageChunk(Base):
     encryption_key_encrypted = Column(String, nullable=False)
     checksum = Column(String(64), nullable=False)
     storage_path = Column(String, nullable=False)  # Path to encrypted chunk file on disk
+    cloud_file_id = Column(String, nullable=True)  # Cloud provider file ID (Google Drive/OneDrive)
+    cloud_provider = Column(String(50), nullable=True)  # Cloud provider name (google_drive/onedrive)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

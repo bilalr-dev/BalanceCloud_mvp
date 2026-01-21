@@ -447,7 +447,16 @@ class CloudUploadService:
             else:
                 raise ValueError(f"Unsupported provider: {provider}")
             
-            cloud_file_ids.append(result["cloud_file_id"])
+            cloud_file_id = result["cloud_file_id"]
+            cloud_file_ids.append(cloud_file_id)
+            
+            # Store cloud_file_id in chunk metadata
+            chunk.cloud_file_id = cloud_file_id
+            chunk.cloud_provider = provider.value
+            db.add(chunk)
+
+        # Commit cloud_file_id updates
+        await db.commit()
 
         return {
             "file_id": str(file_id),
