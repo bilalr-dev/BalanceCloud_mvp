@@ -101,15 +101,24 @@ async def upload_file(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Upload a file"""
+    """
+    Upload a file with chunked encryption
+    
+    Pipeline:
+    1. Receive file upload
+    2. Save to staging area
+    3. Chunk and encrypt
+    4. Move to final storage
+    5. Store metadata
+    """
     try:
         # Read file data
         file_data = await file.read()
 
-        # Get user encryption key
-        user_key = _get_user_key(str(current_user.id))
+        # Get user encryption key (aligned with contract)
+        user_key = await _get_user_key(str(current_user.id), db)
 
-        # Save encrypted file
+        # Save encrypted file (uses staging area internally)
         saved_file = await file_service.save_file(
             db=db,
             user_id=str(current_user.id),
@@ -135,8 +144,8 @@ async def download_file(
 ):
     """Download a file"""
     try:
-        # Get user encryption key
-        user_key = _get_user_key(str(current_user.id))
+        # Get user encryption key (aligned with contract)
+        user_key = await _get_user_key(str(current_user.id), db)
 
         # Get and decrypt file data
         file_data = await file_service.get_file_data(

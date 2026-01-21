@@ -19,11 +19,22 @@ from app.services.encryption_service import encryption_service
 
 
 class FileService:
-    """File service with chunked encryption storage"""
+    """File service with chunked encryption storage and staging area"""
 
     def __init__(self):
         self.storage_path = Path(settings.STORAGE_PATH)
         self.storage_path.mkdir(parents=True, exist_ok=True)
+        
+        # Staging area paths
+        self.staging_path = Path(settings.STAGING_PATH)
+        self.staging_uploads_path = Path(settings.STAGING_UPLOADS_PATH)
+        self.staging_encrypted_path = Path(settings.STAGING_ENCRYPTED_PATH)
+        
+        # Create staging directories
+        self.staging_path.mkdir(parents=True, exist_ok=True)
+        self.staging_uploads_path.mkdir(parents=True, exist_ok=True)
+        self.staging_encrypted_path.mkdir(parents=True, exist_ok=True)
+        
         self.chunk_size = 10 * 1024 * 1024  # 10MB chunks
 
     def _get_user_storage_path(self, user_id: str) -> Path:
@@ -80,7 +91,15 @@ class FileService:
         user_key: bytes = None,
     ) -> File:
         """
-        Save a file with chunked encryption
+        Save a file with chunked encryption using staging area
+        
+        Pipeline:
+        1. Save uploaded file to staging/uploads
+        2. Chunk file
+        3. Encrypt chunks and save to staging/encrypted
+        4. Move encrypted chunks to final storage
+        5. Store metadata in database
+        6. Clean up staging area
         
         Args:
             db: Database session
@@ -123,48 +142,93 @@ class FileService:
         db.add(file)
         await db.flush()  # Flush to get file_id
 
-        # Chunk the file
-        chunks = encryption_service.chunk_file(file_data, self.chunk_size)
-        
-        # Encrypt and save each chunk
-        user_storage = self._get_user_storage_path(str(user_id))
-        for chunk_index, chunk_data in enumerate(chunks):
-            # Derive chunk-specific key
-            chunk_key = encryption_service.derive_chunk_key(
-                user_key, str(file_id), chunk_index
-            )
-            
-            # Encrypt chunk
-            encrypted_data, iv, checksum_hex = encryption_service.encrypt_file_chunk(
-                chunk_data, chunk_key
-            )
-            
-            # Encrypt chunk key with user key for storage (per contract)
-            encrypted_chunk_key, chunk_key_salt = await encryption_service.encrypt_user_key(
-                chunk_key
-            )
-            
-            # Save encrypted chunk to disk
-            chunk_storage_path = user_storage / f"{file_id}_{chunk_index}.enc"
-            async with aiofiles.open(chunk_storage_path, "wb") as f:
-                await f.write(encrypted_data)
-            
-            # Store chunk metadata (aligned with contract)
-            storage_chunk = StorageChunk(
-                file_id=file_id,
-                chunk_index=chunk_index,
-                chunk_size=len(chunk_data),
-                encrypted_size=len(encrypted_data),
-                iv=iv,
-                encryption_key_encrypted=base64.b64encode(encrypted_chunk_key).decode("utf-8"),  # Encrypted chunk key (per contract)
-                checksum=checksum_hex,  # Hex string (per contract)
-                storage_path=str(chunk_storage_path),
-            )
-            db.add(storage_chunk)
+        # Step 1: Save uploaded file to staging/uploads
+        staging_upload_path = self.staging_uploads_path / f"{file_id}_upload"
+        async with aiofiles.open(staging_upload_path, "wb") as f:
+            await f.write(file_data)
 
-        await db.commit()
-        await db.refresh(file)
-        return file
+        encrypted_chunks_info = []
+        staging_paths_to_cleanup = []
+        
+        try:
+            # Step 2: Chunk the file
+            chunks = encryption_service.chunk_file(file_data, self.chunk_size)
+            
+            # Step 3: Encrypt chunks and save to staging/encrypted
+            user_storage = self._get_user_storage_path(str(user_id))
+            
+            for chunk_index, chunk_data in enumerate(chunks):
+                # Derive chunk-specific key
+                chunk_key = encryption_service.derive_chunk_key(
+                    user_key, str(file_id), chunk_index
+                )
+                
+                # Encrypt chunk
+                encrypted_data, iv, checksum_hex = encryption_service.encrypt_file_chunk(
+                    chunk_data, chunk_key
+                )
+                
+                # Encrypt chunk key with user key for storage (per contract)
+                encrypted_chunk_key, chunk_key_salt = await encryption_service.encrypt_user_key(
+                    chunk_key
+                )
+                
+                # Save encrypted chunk to staging/encrypted
+                staging_encrypted_path = self.staging_encrypted_path / f"{file_id}_{chunk_index}.enc"
+                async with aiofiles.open(staging_encrypted_path, "wb") as f:
+                    await f.write(encrypted_data)
+                
+                staging_paths_to_cleanup.append(staging_encrypted_path)
+                
+                encrypted_chunks_info.append({
+                    "chunk_index": chunk_index,
+                    "chunk_data": chunk_data,
+                    "encrypted_data": encrypted_data,
+                    "iv": iv,
+                    "checksum_hex": checksum_hex,
+                    "encrypted_chunk_key": encrypted_chunk_key,
+                    "staging_path": staging_encrypted_path,
+                })
+            
+            # Step 4: Move encrypted chunks to final storage and store metadata
+            for chunk_info in encrypted_chunks_info:
+                # Final storage path
+                chunk_storage_path = user_storage / f"{file_id}_{chunk_info['chunk_index']}.enc"
+                
+                # Move from staging to final storage
+                chunk_info["staging_path"].rename(chunk_storage_path)
+                
+                # Store chunk metadata (aligned with contract)
+                storage_chunk = StorageChunk(
+                    file_id=file_id,
+                    chunk_index=chunk_info["chunk_index"],
+                    chunk_size=len(chunk_info["chunk_data"]),
+                    encrypted_size=len(chunk_info["encrypted_data"]),
+                    iv=chunk_info["iv"],
+                    encryption_key_encrypted=base64.b64encode(chunk_info["encrypted_chunk_key"]).decode("utf-8"),  # Encrypted chunk key (per contract)
+                    checksum=chunk_info["checksum_hex"],  # Hex string (per contract)
+                    storage_path=str(chunk_storage_path),
+                )
+                db.add(storage_chunk)
+
+            await db.commit()
+            await db.refresh(file)
+            
+            # Step 6: Clean up staging area (success case)
+            if staging_upload_path.exists():
+                staging_upload_path.unlink()
+            
+            return file
+            
+        except Exception as e:
+            # Clean up staging area on error
+            if staging_upload_path.exists():
+                staging_upload_path.unlink()
+            # Clean up any encrypted chunks in staging
+            for staging_path in staging_paths_to_cleanup:
+                if staging_path.exists():
+                    staging_path.unlink()
+            raise
 
     async def get_file(
         self, db: AsyncSession, user_id: str, file_id: str
