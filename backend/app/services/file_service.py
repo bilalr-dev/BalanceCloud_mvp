@@ -15,7 +15,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.models.file import File
 from app.models.storage_chunk import StorageChunk
-from app.services.cloud_download_service import CloudDownloadService, CloudProvider
 from app.services.encryption_service import encryption_service
 
 
@@ -297,6 +296,9 @@ class FileService:
         first_chunk = chunks[0]
         if first_chunk.cloud_file_id and first_chunk.cloud_provider:
             # Chunks are in cloud - use cloud download service
+            # Lazy import to avoid circular dependency
+            from app.services.cloud_download_service import CloudDownloadService, CloudProvider
+            
             cloud_download_service = CloudDownloadService()
             provider = CloudProvider(first_chunk.cloud_provider)
             

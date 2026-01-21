@@ -19,9 +19,7 @@ from app.core.config import settings
 from app.models.cloud_account import CloudAccount
 from app.models.file import File
 from app.models.storage_chunk import StorageChunk
-from app.services.cloud_upload_service import CloudUploadService
 from app.services.encryption_service import encryption_service
-from app.services.file_service import file_service
 
 
 class CloudProvider(str, Enum):
@@ -101,6 +99,9 @@ class CloudDownloadService:
             )
             
             # Refresh token based on provider
+            # Lazy import to avoid circular dependency
+            from app.services.cloud_upload_service import CloudUploadService
+            
             upload_service = CloudUploadService()
             if cloud_account.provider == CloudProvider.GOOGLE_DRIVE.value:
                 new_tokens = await upload_service._refresh_google_token(refresh_token)
@@ -212,14 +213,15 @@ class CloudDownloadService:
         Returns:
             Decrypted file data bytes
         """
-        from datetime import timedelta
-        
         # Get cloud account
         cloud_account = await self.get_cloud_account(db, user_id, provider)
         if not cloud_account:
             raise ValueError(f"No cloud account found for provider: {provider.value}")
 
         # Get file
+        # Lazy import to avoid circular dependency
+        from app.services.file_service import file_service
+        
         file = await file_service.get_file(db, user_id, str(file_id))
         if not file:
             raise ValueError("File not found")
