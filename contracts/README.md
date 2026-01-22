@@ -28,7 +28,7 @@ contracts/
 
 | Contract | Owner | Version | Status | Last Updated |
 |----------|-------|---------|--------|--------------|
-| Backend API | Bilal (Backend) | 1.0.0 | ✅ Stable | 2026-01-20 |
+| Backend API | Bilal (Backend) | 1.0.0 | ✅ Stable | 2026-01-22 |
 | Frontend-Backend | Mouhamad (Frontend) | 1.0.0 | 📝 Draft | 2026-01-20 |
 | Cloud Accounts API | Bilal (Backend) | 1.0.0 | 📝 Draft | 2026-01-20 |
 | Cloud Connector | Helijao (Cloud) | 1.0.0 | 📝 Draft | 2026-01-20 |

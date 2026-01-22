@@ -90,6 +90,11 @@ class Settings(BaseSettings):
     # Environment
     ENVIRONMENT: str = "development"
     LOG_LEVEL: str = "INFO"
+    
+    # Storage Configuration
+    # REQUIRED: Set via environment variables in .env file
+    # Default storage quota per user in bytes (e.g., 10 GB = 10737418240 bytes)
+    DEFAULT_STORAGE_QUOTA_BYTES: int = 0  # Must be set in .env file
 
 
 settings = Settings()
@@ -114,4 +119,10 @@ if not settings.ENCRYPTION_KEY:
     raise ValueError(
         "ENCRYPTION_KEY environment variable is required. "
         "Set it in .env file or environment variables."
+    )
+if not settings.DEFAULT_STORAGE_QUOTA_BYTES or settings.DEFAULT_STORAGE_QUOTA_BYTES <= 0:
+    raise ValueError(
+        "DEFAULT_STORAGE_QUOTA_BYTES environment variable is required and must be greater than 0. "
+        "Set it in .env file or environment variables. "
+        "Example: DEFAULT_STORAGE_QUOTA_BYTES=10737418240 (for 10 GB)"
     )

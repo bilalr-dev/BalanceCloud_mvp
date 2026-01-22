@@ -3,7 +3,7 @@
 **Owner:** Dev 1 (Backend Infrastructure)  
 **Version:** 1.0.0  
 **Status:** ✅ Stable  
-**Last Updated:** 2026-01-20  
+**Last Updated:** 2026-01-22  
 **Dependencies:** None
 
 ---
@@ -177,6 +177,119 @@ Authorization: Bearer <access_token>
 
 ---
 
+### GET /api/files/storage/usage
+
+Get storage usage for the current user, including local storage quota and cloud storage usage.
+
+**Headers:**
+```
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "used_bytes": 127682,
+  "total_bytes": 10737418240,
+  "used_percentage": 0.0,
+  "used_gb": 0.0,
+  "total_gb": 10.0,
+  "cloud_storage": {
+    "google_drive": {
+      "used_bytes": 5368709120,
+      "total_bytes": 16106127360,
+      "used_percentage": 33.33,
+      "used_gb": 5.0,
+      "total_gb": 15.0
+    } | null,
+    "onedrive": {
+      "used_bytes": 2147483648,
+      "total_bytes": 5368709120,
+      "used_percentage": 40.0,
+      "used_gb": 2.0,
+      "total_gb": 5.0
+    } | null
+  }
+}
+```
+
+**Notes:**
+- `cloud_storage.google_drive` and `cloud_storage.onedrive` are `null` if no account is connected
+- `total_bytes` can be `null` for Google Drive if storage is unlimited
+- Cloud storage usage is fetched from connected cloud accounts automatically
+- Local storage quota is configurable via `DEFAULT_STORAGE_QUOTA_BYTES` environment variable (default: 10 GB)
+
+**Error Responses:**
+- `401 Unauthorized`: Invalid or missing token
+- `500 Internal Server Error`: Failed to fetch storage usage
+
+**Mock Response:**
+```json
+{
+  "used_bytes": 1024,
+  "total_bytes": 10737418240,
+  "used_percentage": 0.0,
+  "used_gb": 0.0,
+  "total_gb": 10.0,
+  "cloud_storage": {
+    "google_drive": null,
+    "onedrive": null
+  }
+}
+```
+
+---
+
+### POST /api/files/upload
+
+Upload a file with chunked encryption and automatic cloud upload.
+
+**Headers:**
+```
+Authorization: Bearer <access_token>
+Content-Type: multipart/form-data
+```
+
+**Request:**
+- `file`: File to upload (multipart/form-data)
+- `parent_id` (optional): Parent folder ID (query parameter)
+
+**Response (201 Created):**
+```json
+{
+  "id": "file-id-123",
+  "user_id": "user-id-123",
+  "name": "document.pdf",
+  "path": "/documents/document.pdf",
+  "size": 1024,
+  "mime_type": "application/pdf",
+  "is_folder": false,
+  "parent_id": null,
+  "created_at": "2026-01-20T10:00:00Z",
+  "updated_at": "2026-01-20T10:00:00Z"
+}
+```
+
+**Behavior:**
+- File is chunked (10MB chunks), encrypted, and stored locally
+- If user has a connected cloud account (Google Drive/OneDrive), file chunks are automatically uploaded to cloud in background
+- Storage quota is checked before upload (default: 10 GB per user, configurable via `DEFAULT_STORAGE_QUOTA_BYTES`)
+- Cloud upload happens asynchronously and doesn't block the API response
+
+**Error Responses:**
+- `400 Bad Request`: Invalid file or parent folder not found
+- `401 Unauthorized`: Invalid or missing token
+- `413 Request Entity Too Large`: Insufficient storage space (quota exceeded)
+- `422 Unprocessable Entity`: Validation error
+- `500 Internal Server Error`: Upload failed
+
+**Storage Quota:**
+- Default quota: 10 GB per user (configurable via `DEFAULT_STORAGE_QUOTA_BYTES` environment variable)
+- Quota is checked before upload
+- Error message includes available and required space in GB
+
+---
+
 ## Data Schemas
 
 ### UserResponse
@@ -213,6 +326,32 @@ Authorization: Bearer <access_token>
 }
 ```
 
+### StorageUsageResponse
+```typescript
+{
+  used_bytes: number
+  total_bytes: number
+  used_percentage: number
+  used_gb: number
+  total_gb: number
+  cloud_storage: {
+    google_drive: CloudStorageUsage | null
+    onedrive: CloudStorageUsage | null
+  }
+}
+```
+
+### CloudStorageUsage
+```typescript
+{
+  used_bytes: number
+  total_bytes: number | null  // null for unlimited storage
+  used_percentage: number
+  used_gb: number
+  total_gb: number | null  // null for unlimited storage
+}
+```
+
 ---
 
 ## Error Response Format
@@ -229,6 +368,7 @@ All errors follow this format:
 - `400 Bad Request`: Client error (validation, business logic)
 - `401 Unauthorized`: Authentication required or failed
 - `404 Not Found`: Resource not found
+- `413 Request Entity Too Large`: Storage quota exceeded
 - `422 Unprocessable Entity`: Validation error
 - `500 Internal Server Error`: Server error
 
@@ -251,11 +391,16 @@ Authorization: Bearer <access_token>
 
 ## Change Log
 
-### v1.0.0 (2026-01-20) - Initial Stable Release
+### v1.0.0 (2026-01-22) - Updated with Storage Features
 - ✅ POST /api/auth/register
 - ✅ POST /api/auth/login
 - ✅ GET /api/auth/me
 - ✅ GET /api/files
+- ✅ POST /api/files/upload (with automatic cloud upload)
+- ✅ GET /api/files/storage/usage (local + cloud storage tracking)
+- ✅ Storage quota management (10 GB default, configurable)
+- ✅ Automatic cloud upload after file upload
+- ✅ Cloud storage usage tracking (Google Drive, OneDrive)
 
 ---
 
@@ -283,4 +428,32 @@ npm install msw
 
 **Contract Owner:** Dev 1  
 **Contact:** [Slack channel or email]  
-**Last Reviewed:** 2026-01-20
+**Last Reviewed:** 2026-01-22
+
+---
+
+## Configuration
+
+### Storage Quota
+
+Storage quota per user is configurable via environment variable:
+
+- **Environment Variable**: `DEFAULT_STORAGE_QUOTA_BYTES`
+- **Default Value**: `10737418240` (10 GB)
+- **Location**: `.env` file or system environment variables
+- **Format**: Integer (bytes)
+
+**Examples:**
+- 1 GB: `1073741824`
+- 5 GB: `5368709120`
+- 10 GB: `10737418240` (default)
+- 20 GB: `21474836480`
+- 50 GB: `53687091200`
+
+### Cloud Storage
+
+Cloud storage usage is automatically fetched from connected cloud accounts:
+- **Google Drive**: Requires `drive.metadata.readonly` scope (included in OAuth flow)
+- **OneDrive**: Uses Microsoft Graph API `/me/drive/quota` endpoint
+- Cloud storage usage is included in `/api/files/storage/usage` response
+- If no cloud account is connected, `cloud_storage` fields are `null`

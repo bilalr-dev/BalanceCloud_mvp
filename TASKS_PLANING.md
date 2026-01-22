@@ -12,14 +12,14 @@
 
 ## Team Roles & Responsibilities
 
-### 👤 **Bilal: Backend Infrastructure**
-**Focus**: Database migration, Redis setup, infrastructure improvements
+### 👤 **Bilal: Backend Infrastructure/Encryption & File Services**
+**Focus**: Database migration, Redis setup, infrastructure improvements, File chunking, enhanced encryption, key storage
 
 ### 👤 **Helijao: Cloud Connectors**
 **Focus**: OAuth2 flows, Google Drive & OneDrive integration
 
-### 👤 **Bilal: Encryption & File Services**
-**Focus**: File chunking, enhanced encryption, key storage
+### 👤 **Aakash: **
+**Focus**: Team managment/ documentation
 
 ### 👤 **Moudi: Frontend & UX**
 **Focus**: Cloud accounts UI, improved user experience
@@ -181,17 +181,19 @@
 
 #### Bilal: Cloud Upload Service
 **Tasks** (6-8 hours):
-- [ ] Create `cloud_upload_service.py`
-- [ ] Implement upload to Google Drive
-- [ ] Implement upload to OneDrive
-- [ ] Add provider selection logic
-- [ ] Integrate with file service
-- [ ] Test cloud uploads
+- [x] Create `cloud_upload_service.py`
+- [x] Implement upload to Google Drive
+- [x] Implement upload to OneDrive
+- [x] Add provider selection logic
+- [x] Integrate with file service
+- [x] Test cloud uploads
+- [x] Add automatic cloud upload after file upload (background task)
 
 **Deliverables**:
-- Cloud upload service complete
-- Files upload to cloud providers
-- Provider selection working
+- ✅ Cloud upload service complete
+- ✅ Files upload to cloud providers
+- ✅ Provider selection working
+- ✅ Automatic cloud upload implemented
 
 #### Mouhamad: File Management UI Enhancements
 **Tasks** (6-8 hours):
@@ -241,17 +243,17 @@
 
 #### Bilal: Download Service Integration
 **Tasks** (6-8 hours):
-- [ ] Create `download_service.py`
-- [ ] Implement chunk fetching from cloud
-- [ ] Add decryption and reassembly
-- [ ] Implement streaming download
-- [ ] Add checksum verification
-- [ ] Test end-to-end download
+- [x] Create `download_service.py`
+- [x] Implement chunk fetching from cloud
+- [x] Add decryption and reassembly
+- [x] Implement streaming download
+- [x] Add checksum verification
+- [x] Test end-to-end download
 
 **Deliverables**:
-- Download service complete
-- End-to-end download working
-- Streaming implemented
+- ✅ Download service complete
+- ✅ End-to-end download working
+- ✅ Streaming implemented
 
 #### Mouhamad: Frontend Integration & Polish
 **Tasks** (6-8 hours):
@@ -282,16 +284,22 @@
 
 #### Bilal: Infrastructure & Security
 **Tasks** (4-6 hours):
-- [ ] Add rate limiting middleware (Redis-based)
-- [ ] Add security headers middleware
-- [ ] Test PostgreSQL performance
-- [ ] Optimize database queries
-- [ ] Document infrastructure setup
+- [x] Add rate limiting middleware (Redis-based)
+- [x] Add security headers middleware
+- [x] Test PostgreSQL performance
+- [x] Optimize database queries
+- [x] Document infrastructure setup
+- [x] Add storage quota management (10 GB per user, configurable)
+- [x] Add storage usage tracking (local + cloud)
+- [x] Implement automatic cloud upload after file upload
 
 **Deliverables**:
-- Rate limiting working
-- Security headers added
-- Infrastructure documented
+- ✅ Rate limiting working
+- ✅ Security headers added
+- ✅ Infrastructure documented
+- ✅ Storage quota system implemented
+- ✅ Storage usage API endpoint
+- ✅ Automatic cloud upload working
 
 #### Helijao: Cloud Integration Testing
 **Tasks** (4-6 hours):
@@ -309,17 +317,22 @@
 
 #### Bilal: Encryption & Storage Testing
 **Tasks** (4-6 hours):
-- [ ] Test file chunking with various sizes
-- [ ] Test encryption/decryption
-- [ ] Test key storage and retrieval
-- [ ] Test large file handling
-- [ ] Performance testing
-- [ ] Document encryption approach
+- [x] Test file chunking with various sizes
+- [x] Test encryption/decryption
+- [x] Test key storage and retrieval
+- [x] Test large file handling
+- [x] Performance testing
+- [x] Document encryption approach
+- [x] Add storage quota per user (10 GB default)
+- [x] Add storage usage tracking API
+- [x] Add cloud storage usage tracking (Google Drive, OneDrive)
 
 **Deliverables**:
-- Encryption tested thoroughly
-- Performance acceptable
-- Documentation complete
+- ✅ Encryption tested thoroughly
+- ✅ Performance acceptable
+- ✅ Documentation complete
+- ✅ Storage quota system implemented
+- ✅ Storage usage API with cloud storage support
 
 #### Mouhamad: Frontend Testing & Documentation
 **Tasks** (4-6 hours):
@@ -435,17 +448,21 @@
 
 ### End of Week Checklist:
 
-- [ ] PostgreSQL database running
-- [ ] Redis running
-- [ ] Google Drive OAuth working
-- [ ] OneDrive OAuth working
-- [ ] Files upload to cloud
-- [ ] Files download from cloud
-- [ ] File chunking working
-- [ ] Encryption keys stored in database
-- [ ] Cloud accounts UI functional
-- [ ] End-to-end flow tested
-- [ ] Basic documentation complete
+- [x] PostgreSQL database running
+- [x] Redis running
+- [x] Google Drive OAuth working
+- [x] OneDrive OAuth working (structure ready)
+- [x] Files upload to cloud (automatic after local upload)
+- [x] Files download from cloud
+- [x] File chunking working
+- [x] Encryption keys stored in database
+- [x] Cloud accounts UI functional
+- [x] End-to-end flow tested
+- [x] Basic documentation complete
+- [x] Storage quota management (10 GB per user, configurable via `DEFAULT_STORAGE_QUOTA_BYTES`)
+- [x] Storage usage tracking (local + cloud via `GET /api/files/storage/usage`)
+- [x] Rate limiting middleware (Redis-based)
+- [x] Security headers middleware
 
 ---
 
@@ -554,16 +571,19 @@ main (MVP)
 
 ## Final Checklist Before Demo
 
-- [ ] All services running (PostgreSQL, Redis, Backend, Frontend)
-- [ ] Can register/login
-- [ ] Can connect Google Drive
-- [ ] Can connect OneDrive
-- [ ] Can upload file (goes to cloud)
-- [ ] Can download file (from cloud)
-- [ ] File encryption working
-- [ ] File chunking working
-- [ ] UI functional and polished
-- [ ] Basic documentation complete
+- [x] All services running (PostgreSQL, Redis, Backend, Frontend)
+- [x] Can register/login
+- [x] Can connect Google Drive
+- [x] Can connect OneDrive (structure ready)
+- [x] Can upload file (goes to cloud automatically)
+- [x] Can download file (from cloud)
+- [x] File encryption working
+- [x] File chunking working
+- [x] UI functional and polished
+- [x] Basic documentation complete
+- [x] Storage quota management working (10 GB default, configurable)
+- [x] Storage usage tracking working (local + cloud)
+- [x] Rate limiting and security headers implemented
 
 ---
 
@@ -586,5 +606,3 @@ main (MVP)
 - **Test early** - Test each feature as you build it
 - **Communicate** - Daily standups are critical
 - **Reference full version** - Use existing code as reference when stuck
-
-Good luck! 🚀
