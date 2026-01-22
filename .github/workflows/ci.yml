@@ -61,6 +61,7 @@ jobs:
         SECRET_KEY: ${{ secrets.SECRET_KEY || 'test-secret-key-for-ci' }}
         JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY || 'test-jwt-secret-for-ci' }}
         ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY || 'test-encryption-key-for-ci' }}
+        DEFAULT_STORAGE_QUOTA_BYTES: ${{ secrets.DEFAULT_STORAGE_QUOTA_BYTES || '10737418240' }}
         ENVIRONMENT: test
         PYTHONPATH: .
       run: |
@@ -74,6 +75,7 @@ jobs:
         SECRET_KEY: ${{ secrets.SECRET_KEY || 'test-secret-key-for-ci' }}
         JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY || 'test-jwt-secret-for-ci' }}
         ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY || 'test-encryption-key-for-ci' }}
+        DEFAULT_STORAGE_QUOTA_BYTES: ${{ secrets.DEFAULT_STORAGE_QUOTA_BYTES || '10737418240' }}
         ENVIRONMENT: test
         PYTHONPATH: .
       run: |
@@ -87,6 +89,7 @@ jobs:
         SECRET_KEY: ${{ secrets.SECRET_KEY || 'test-secret-key-for-ci' }}
         JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY || 'test-jwt-secret-for-ci' }}
         ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY || 'test-encryption-key-for-ci' }}
+        DEFAULT_STORAGE_QUOTA_BYTES: ${{ secrets.DEFAULT_STORAGE_QUOTA_BYTES || '10737418240' }}
         ENVIRONMENT: test
         PYTHONPATH: .
       run: |
@@ -100,6 +103,7 @@ jobs:
         SECRET_KEY: ${{ secrets.SECRET_KEY || 'test-secret-key-for-ci' }}
         JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY || 'test-jwt-secret-for-ci' }}
         ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY || 'test-encryption-key-for-ci' }}
+        DEFAULT_STORAGE_QUOTA_BYTES: ${{ secrets.DEFAULT_STORAGE_QUOTA_BYTES || '10737418240' }}
         ENVIRONMENT: test
         PYTHONPATH: .
       run: |
@@ -113,6 +117,7 @@ jobs:
         SECRET_KEY: ${{ secrets.SECRET_KEY || 'test-secret-key-for-ci' }}
         JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY || 'test-jwt-secret-for-ci' }}
         ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY || 'test-encryption-key-for-ci' }}
+        DEFAULT_STORAGE_QUOTA_BYTES: ${{ secrets.DEFAULT_STORAGE_QUOTA_BYTES || '10737418240' }}
         ENVIRONMENT: test
         PYTHONPATH: .
       run: |
@@ -137,6 +142,7 @@ jobs:
         SECRET_KEY: ${{ secrets.SECRET_KEY || 'test-secret-key-for-ci' }}
         JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY || 'test-jwt-secret-for-ci' }}
         ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY || 'test-encryption-key-for-ci' }}
+        DEFAULT_STORAGE_QUOTA_BYTES: ${{ secrets.DEFAULT_STORAGE_QUOTA_BYTES || '10737418240' }}
         ENVIRONMENT: test
         PYTHONPATH: .
         API_BASE_URL: http://localhost:8000
@@ -151,6 +157,7 @@ jobs:
         SECRET_KEY: ${{ secrets.SECRET_KEY || 'test-secret-key-for-ci' }}
         JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY || 'test-jwt-secret-for-ci' }}
         ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY || 'test-encryption-key-for-ci' }}
+        DEFAULT_STORAGE_QUOTA_BYTES: ${{ secrets.DEFAULT_STORAGE_QUOTA_BYTES || '10737418240' }}
         ENVIRONMENT: test
         PYTHONPATH: .
       run: |
@@ -172,6 +179,7 @@ jobs:
         SECRET_KEY: ${{ secrets.SECRET_KEY || 'test-secret-key-for-ci' }}
         JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY || 'test-jwt-secret-for-ci' }}
         ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY || 'test-encryption-key-for-ci' }}
+        DEFAULT_STORAGE_QUOTA_BYTES: ${{ secrets.DEFAULT_STORAGE_QUOTA_BYTES || '10737418240' }}
         ENVIRONMENT: test
         PYTHONPATH: .
       run: |
