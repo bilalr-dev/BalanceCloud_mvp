@@ -180,16 +180,19 @@ async def download_file(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Download a file"""
+    """
+    Download a file with streaming support
+    
+    Uses download_service for:
+    - Chunk fetching from cloud or local storage
+    - Decryption and reassembly
+    - Streaming download
+    - Checksum verification
+    """
     try:
         # Get user encryption key (aligned with contract)
         user_key = await encryption_service.get_or_create_user_encryption_key(
             db, str(current_user.id)
-        )
-
-        # Get and decrypt file data
-        file_data = await file_service.get_file_data(
-            db, str(current_user.id), file_id, user_key
         )
 
         # Get file metadata
@@ -199,13 +202,23 @@ async def download_file(
                 status_code=status.HTTP_404_NOT_FOUND, detail="File not found"
             )
 
+        # Import download service (lazy import to avoid circular dependency)
+        from app.services.download_service import download_service
+
+        # Create async generator for streaming
+        async def generate():
+            async for chunk in download_service.stream_file_download(
+                db, str(current_user.id), file_id, user_key
+            ):
+                yield chunk
+
         # Return as streaming response
         return StreamingResponse(
-            io.BytesIO(file_data),
+            generate(),
             media_type=file.mime_type or "application/octet-stream",
             headers={
                 "Content-Disposition": f'attachment; filename="{file.name}"',
-                "Content-Length": str(len(file_data)),
+                # Note: Content-Length not set for streaming responses
             },
         )
     except ValueError as e:
