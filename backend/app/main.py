@@ -5,7 +5,7 @@ BalanceCloud MVP - FastAPI Application Entry Point
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import auth, files
+from app.api.routes import auth, cloud_accounts, files
 from app.core.config import settings
 from app.core.database import Base, engine
 from app.middleware.rate_limiting import RateLimitingMiddleware
@@ -51,6 +51,9 @@ app.add_middleware(
 # Include routers
 app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
 app.include_router(files.router, prefix="/api/files", tags=["files"])
+app.include_router(
+    cloud_accounts.router, prefix="/api/cloud-accounts", tags=["cloud-accounts"]
+)
 
 
 @app.on_event("startup")
