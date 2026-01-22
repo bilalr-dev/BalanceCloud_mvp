@@ -1,0 +1,168 @@
+.cloud-accounts-page {
+  width: 100%;
+}
+
+.cloud-accounts-header {
+  margin-bottom: var(--spacing-xl);
+}
+
+.page-subtitle {
+  color: var(--color-text-light);
+  margin-top: var(--spacing-sm);
+}
+
+.cloud-accounts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.cloud-account-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.cloud-account-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 6px var(--color-shadow);
+}
+
+.account-icon {
+  font-size: 4rem;
+  margin-bottom: var(--spacing-md);
+}
+
+.account-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-md);
+}
+
+.account-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  font-size: 0.875rem;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.account-status.connected .status-indicator {
+  background: var(--color-success);
+}
+
+.account-status.disconnected .status-indicator {
+  background: var(--color-text-light);
+}
+
+.account-details {
+  margin-bottom: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.account-email {
+  font-size: 0.875rem;
+  color: var(--color-text-light);
+  margin-bottom: var(--spacing-xs);
+}
+
+.account-expiry {
+  font-size: 0.75rem;
+  color: var(--color-text-light);
+}
+
+.account-actions {
+  margin-top: var(--spacing-md);
+}
+
+.btn-full {
+  width: 100%;
+}
+
+.connected-accounts-list {
+  margin-top: var(--spacing-2xl);
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-lg);
+}
+
+.accounts-table {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.account-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+  gap: var(--spacing-md);
+}
+
+.account-row:last-child {
+  border-bottom: none;
+}
+
+.account-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex: 1;
+}
+
+.account-icon-small {
+  font-size: 1.5rem;
+}
+
+.account-name-small {
+  font-weight: 500;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-xs);
+}
+
+.account-email-small {
+  font-size: 0.875rem;
+  color: var(--color-text-light);
+}
+
+.account-status-cell {
+  flex: 0 0 auto;
+}
+
+.badge {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.badge-success {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--color-success);
+}
+
+.badge-error {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-error);
+}
