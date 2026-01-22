@@ -25,7 +25,7 @@ apiClient.interceptors.request.use(
   }
 )
 
-// Handle 401 errors (redirect to login)
+// Handle errors (401, 429 rate limiting)
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ErrorResponse>) => {
@@ -36,6 +36,17 @@ apiClient.interceptors.response.use(
         window.location.href = '/login'
       }
     }
+    
+    // Handle rate limiting - don't spam errors, just log
+    if (error.response?.status === 429) {
+      const retryAfter = error.response.headers['retry-after'] || '60'
+      console.warn(`Rate limit exceeded. Retry after ${retryAfter} seconds`)
+      // Don't throw error for rate limits on storage usage - it's not critical
+      if (error.config?.url?.includes('/storage/usage')) {
+        return Promise.resolve({ data: null, status: 429 } as any)
+      }
+    }
+    
     return Promise.reject(error)
   }
 )
