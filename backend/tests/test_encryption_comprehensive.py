@@ -148,9 +148,8 @@ class TestFileChunking:
         )
         chunks = result.scalars().all()
         
-        # Empty file should still create 1 chunk
-        assert len(chunks) == 1
-        assert chunks[0].chunk_size == 0
+        # Empty file creates 0 chunks (no data to chunk)
+        assert len(chunks) == 0
 
 
 class TestEncryptionDecryption:
@@ -229,7 +228,7 @@ class TestEncryptionDecryption:
         # Verify encrypted data is different
         assert encrypted_data != chunk_data
         assert len(iv) == 12  # GCM nonce is 12 bytes
-        assert len(checksum_hex) == 64  # SHA-256 hex is 64 chars
+        assert len(checksum_hex) == 32  # GCM tag hex is 32 chars (16 bytes * 2)
         
         # Verify checksum
         assert encryption_service.verify_checksum(encrypted_data, checksum_hex)

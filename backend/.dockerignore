@@ -48,13 +48,13 @@ Thumbs.db
 *.md
 docs/
 
-# Test files
-tests/
-test_*.py
-*_test.py
+# Test files (keep for testing, but can be excluded in production builds)
+# tests/
+# test_*.py
+# *_test.py
 
-# Scripts (not needed in production)
-scripts/
+# Scripts (keep for testing and utilities)
+# scripts/
 
 # Temporary files
 *.tmp
