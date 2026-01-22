@@ -275,31 +275,40 @@ class CloudUploadService:
         """
         # For files > 5MB, use resumable upload
         # For now, use simple upload (files are chunked, so chunks should be < 5MB)
-        async with httpx.AsyncClient() as client:
+        import json
+        import uuid
+        
+        async with httpx.AsyncClient(timeout=60.0) as client:
             # Create file metadata
-            import json
             metadata = {
                 "name": file_name,
             }
             
-            # Upload file using multipart upload
-            # Google Drive multipart upload requires specific format
-            boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW"
+            # Generate a unique boundary
+            boundary = f"----WebKitFormBoundary{uuid.uuid4().hex[:16]}"
             metadata_json = json.dumps(metadata)
             
-            # Create multipart form data
-            body_parts = [
-                f"--{boundary}",
-                'Content-Disposition: form-data; name="metadata"; filename="metadata.json"',
-                "Content-Type: application/json",
-                "",
-                metadata_json,
-                f"--{boundary}",
-                f'Content-Disposition: form-data; name="file"; filename="{file_name}"',
-                f"Content-Type: {mime_type}",
-                "",
-            ]
-            body = "\r\n".join(body_parts).encode("utf-8") + file_data + f"\r\n--{boundary}--\r\n".encode("utf-8")
+            # Build multipart body according to Google Drive API spec
+            # Format: --boundary\r\nContent-Type: application/json\r\n\r\n{metadata}\r\n--boundary\r\nContent-Type: {mime_type}\r\n\r\n{file_data}\r\n--boundary--
+            parts = []
+            
+            # Metadata part
+            parts.append(f"--{boundary}".encode())
+            parts.append(b"Content-Type: application/json; charset=UTF-8")
+            parts.append(b"")
+            parts.append(metadata_json.encode("utf-8"))
+            
+            # File part
+            parts.append(f"--{boundary}".encode())
+            parts.append(f"Content-Type: {mime_type}".encode())
+            parts.append(b"")
+            parts.append(file_data)
+            
+            # Closing boundary
+            parts.append(f"--{boundary}--".encode())
+            
+            # Join with \r\n
+            body = b"\r\n".join(parts)
             
             response = await client.post(
                 f"{self.google_drive_upload_url}?uploadType=multipart",
@@ -309,8 +318,12 @@ class CloudUploadService:
                 },
                 content=body,
             )
-            response.raise_for_status()
             
+            if response.status_code != 200:
+                error_detail = response.text
+                raise ValueError(f"Google Drive upload failed: {response.status_code} - {error_detail}")
+            
+            response.raise_for_status()
             result = response.json()
             return {
                 "cloud_file_id": result["id"],
