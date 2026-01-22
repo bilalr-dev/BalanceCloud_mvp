@@ -21,7 +21,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       token: null,
       isAuthenticated: false,
@@ -33,12 +33,12 @@ export const useAuthStore = create<AuthState>()(
         try {
           const tokenResponse = await authService.login({ email, password })
           const token = tokenResponse.access_token
-          
+
           localStorage.setItem(AUTH_TOKEN_KEY, token)
-          
+
           // Fetch user info
           const user = await authService.getCurrentUser()
-          
+
           set({
             token,
             user,
@@ -64,12 +64,12 @@ export const useAuthStore = create<AuthState>()(
         try {
           const tokenResponse = await authService.register({ email, password })
           const token = tokenResponse.access_token
-          
+
           localStorage.setItem(AUTH_TOKEN_KEY, token)
-          
+
           // Fetch user info
           const user = await authService.getCurrentUser()
-          
+
           set({
             token,
             user,

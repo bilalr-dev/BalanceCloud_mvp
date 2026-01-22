@@ -16,7 +16,7 @@
 **Focus**: Database migration, Redis setup, infrastructure improvements, File chunking, enhanced encryption, key storage
 
 ### 👤 **Helijao: Cloud Connectors**
-**Focus**: OAuth2 flows, Google Drive & OneDrive integration
+**Focus**: OAuth2 flows, Google Drive & [OneDrive integration] Theoretical
 
 ### 👤 **Aakash: Manager**
 **Focus**: Team managment/ documentation
@@ -165,6 +165,7 @@
 - File chunking implemented
 - Upload pipeline functional
 
+<!-- Theoretical:
 #### Helijao: OneDrive Integration
 **Tasks** (6-8 hours):
 - [ ] Implement OneDrive OAuth2 flow
@@ -178,6 +179,7 @@
 - OneDrive OAuth working
 - OneDrive upload/download working
 - Both cloud providers functional
+-->
 
 #### Bilal: Cloud Upload Service
 **Tasks** (6-8 hours):
@@ -364,10 +366,12 @@
    - OneDrive OAuth
    - Basic upload/download
 
+<!--
 3. **File Chunking**
    - 10MB chunk size
    - Chunk encryption
    - Chunk storage
+-->
 
 4. **Cloud Upload/Download**
    - Upload encrypted chunks to cloud

@@ -60,7 +60,7 @@ export const useFilesStore = create<FilesState>((set, get) => ({
         }))
       }, 200)
 
-      const uploadedFile = await fileService.uploadFile(file, parentId)
+      await fileService.uploadFile(file, parentId)
       
       clearInterval(progressInterval)
       set({ uploadProgress: 100 })
