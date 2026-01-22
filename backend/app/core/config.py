@@ -1,55 +1,72 @@
 """
 Configuration for MVP v1 - PostgreSQL and Redis
+
+All sensitive values (SECRET_KEY, JWT_SECRET_KEY, ENCRYPTION_KEY, OAuth credentials)
+MUST be set via environment variables in .env file or system environment.
+No hardcoded values are allowed for security reasons.
 """
 
-import os
 from typing import List
 
 from dotenv import load_dotenv
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Load .env file if it exists
 load_dotenv()
 
 
 class Settings(BaseSettings):
+    """
+    Application settings loaded from environment variables.
+    
+    All sensitive values must be provided via .env file or environment variables.
+    See env.example for required variables.
+    """
+    
+    model_config = SettingsConfigDict(
+        case_sensitive=True,
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
+
     # Database - PostgreSQL
     # REQUIRED: Set DATABASE_URL environment variable
     # Format: postgresql+asyncpg://USER:PASSWORD@HOST:PORT/DATABASE
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
+    DATABASE_URL: str = ""
 
     # Redis
-    REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    REDIS_URL: str = "redis://localhost:6379/0"
 
     # Security
-    # REQUIRED: Set via environment variables
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "")
-    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "")
-    JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
-    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = int(
-        os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "30")
-    )
+    # REQUIRED: Set via environment variables in .env file
+    # Generate with: openssl rand -hex 32
+    SECRET_KEY: str = ""
+    JWT_SECRET_KEY: str = ""
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     # Encryption
-    # REQUIRED: Set via environment variables
-    ENCRYPTION_KEY: str = os.getenv("ENCRYPTION_KEY", "")
+    # REQUIRED: Set via environment variables in .env file
+    # Generate with: openssl rand -hex 32
+    ENCRYPTION_KEY: str = ""
 
     # OAuth - Google Drive
-    GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")
-    GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
-    GOOGLE_REDIRECT_URI: str = os.getenv(
-        "GOOGLE_REDIRECT_URI", "http://localhost:8000/api/cloud-accounts/callback/google_drive"
-    )
+    # REQUIRED if using Google Drive integration
+    # Get from: https://console.cloud.google.com/apis/credentials
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_REDIRECT_URI: str = ""
 
     # OAuth - Microsoft OneDrive
-    MICROSOFT_CLIENT_ID: str = os.getenv("MICROSOFT_CLIENT_ID", "")
-    MICROSOFT_CLIENT_SECRET: str = os.getenv("MICROSOFT_CLIENT_SECRET", "")
-    MICROSOFT_REDIRECT_URI: str = os.getenv(
-        "MICROSOFT_REDIRECT_URI", "http://localhost:8000/api/cloud-accounts/callback/onedrive"
-    )
-    MICROSOFT_TENANT_ID: str = os.getenv("MICROSOFT_TENANT_ID", "common")
+    # REQUIRED if using OneDrive integration
+    # Get from: https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps
+    MICROSOFT_CLIENT_ID: str = ""
+    MICROSOFT_CLIENT_SECRET: str = ""
+    MICROSOFT_REDIRECT_URI: str = ""
+    MICROSOFT_TENANT_ID: str = "common"
 
     # CORS
-    CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "http://localhost:5173")
+    CORS_ORIGINS: str = "http://localhost:5173"
 
     @property
     def cors_origins_list(self) -> List[str]:
@@ -59,25 +76,20 @@ class Settings(BaseSettings):
         ]
 
     # Rate Limiting
-    RATE_LIMIT_ENABLED: bool = os.getenv("RATE_LIMIT_ENABLED", "true").lower() == "true"
-    RATE_LIMIT_REQUESTS_PER_MINUTE: int = int(
-        os.getenv("RATE_LIMIT_REQUESTS_PER_MINUTE", "60")
-    )
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_REQUESTS_PER_MINUTE: int = 60
 
     # File Storage - Simple local directory
-    STORAGE_PATH: str = os.getenv("STORAGE_PATH", "./storage")
+    STORAGE_PATH: str = "./storage"
     
     # Staging Area - Temporary storage for uploads and encrypted chunks
-    STAGING_PATH: str = os.getenv("STAGING_PATH", "./staging")
-    STAGING_UPLOADS_PATH: str = os.getenv("STAGING_UPLOADS_PATH", "./staging/uploads")
-    STAGING_ENCRYPTED_PATH: str = os.getenv("STAGING_ENCRYPTED_PATH", "./staging/encrypted")
+    STAGING_PATH: str = "./staging"
+    STAGING_UPLOADS_PATH: str = "./staging/uploads"
+    STAGING_ENCRYPTED_PATH: str = "./staging/encrypted"
 
     # Environment
-    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
-    LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
-
-    class Config:
-        case_sensitive = True
+    ENVIRONMENT: str = "development"
+    LOG_LEVEL: str = "INFO"
 
 
 settings = Settings()

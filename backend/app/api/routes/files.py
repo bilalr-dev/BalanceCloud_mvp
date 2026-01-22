@@ -5,7 +5,7 @@ Simplified File Management Routes for MVP
 import io
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 from fastapi import File as FastAPIFile
 from fastapi import HTTPException, Query, UploadFile, status
 from fastapi.responses import StreamingResponse
@@ -123,6 +123,7 @@ async def create_folder(
 async def upload_file(
     file: UploadFile = FastAPIFile(...),
     parent_id: Optional[str] = Query(None),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -155,6 +156,39 @@ async def upload_file(
             parent_id=parent_id,
             user_key=user_key,
         )
+        
+        # Automatically upload to cloud if user has a connected cloud account
+        # This runs in background so the API response is fast
+        async def upload_to_cloud():
+            try:
+                from app.services.cloud_upload_service import CloudUploadService, CloudProvider
+                from app.core.database import AsyncSessionLocal
+                
+                # Create a new database session for background task
+                async with AsyncSessionLocal() as db_session:
+                    cloud_upload_service = CloudUploadService()
+                    
+                    # Check if user has a cloud account (prefer Google Drive, then OneDrive)
+                    provider = await cloud_upload_service.select_provider(
+                        db_session, str(current_user.id), preferred_provider=CloudProvider.GOOGLE_DRIVE
+                    )
+                    
+                    if provider:
+                        # Upload chunks to cloud
+                        await cloud_upload_service.upload_file_chunks_to_cloud(
+                            db=db_session,
+                            user_id=str(current_user.id),
+                            file_id=saved_file.id,
+                            provider=provider,
+                        )
+            except Exception as e:
+                # Log error but don't fail the upload if cloud upload fails
+                import logging
+                logging.error(f"Failed to upload file to cloud: {str(e)}")
+        
+        # Add background task for cloud upload
+        background_tasks.add_task(upload_to_cloud)
+        
         return FileResponse(
             id=str(saved_file.id),
             user_id=str(saved_file.user_id),

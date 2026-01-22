@@ -15,9 +15,13 @@ from app.models.user import User
 @pytest.fixture(scope="function")
 async def db_session():
     """Create a test database session"""
-    # Use the same engine as the app
+    # Create a new session for each test
+    # Ensure we're using a fresh connection from the pool
+    # The pool_pre_ping setting will verify connections before using them
     async with AsyncSessionLocal() as session:
         try:
+            # Force a connection to be established in the current event loop
+            await session.connection()
             yield session
             await session.commit()
         except Exception:
@@ -30,9 +34,14 @@ async def db_session():
 @pytest.fixture(scope="function")
 async def test_user(db_session):
     """Create a test user"""
+    from sqlalchemy import select
+    
+    # Use unique email for each test run
+    unique_email = f"test_{uuid4().hex[:8]}@example.com"
+    
     user = User(
         id=uuid4(),
-        email="test@example.com",
+        email=unique_email,
         password_hash="hashed_password",  # In real tests, use proper hashing
     )
     db_session.add(user)
