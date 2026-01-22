@@ -43,7 +43,15 @@ export default function CloudAccountsPage() {
       // Redirect to OAuth URL
       window.location.href = response.oauth_url
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to initiate OAuth flow')
+      // Handle 501 Not Implemented (OAuth not configured)
+      if (err.response?.status === 501) {
+        const providerName = provider === 'google_drive' ? 'Google Drive' : 'OneDrive'
+        setError(
+          `${providerName} OAuth is not yet configured. Please configure OAuth credentials in ${provider === 'google_drive' ? 'Google Cloud Console' : 'Azure Portal'} first.`
+        )
+      } else {
+        setError(err.response?.data?.detail || 'Failed to initiate OAuth flow')
+      }
     }
   }
 
