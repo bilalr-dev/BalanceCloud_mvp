@@ -18,7 +18,7 @@
 ### 👤 **Helijao: Cloud Connectors**
 **Focus**: OAuth2 flows, Google Drive & OneDrive integration
 
-### 👤 **Aakash: Manager***
+### 👤 **Aakash: Manager**
 **Focus**: Team managment/ documentation
 
 ### 👤 **Moudi: Frontend & UX**
