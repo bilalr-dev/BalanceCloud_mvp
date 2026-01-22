@@ -35,4 +35,8 @@ export const fileService = {
     const response = await apiClient.get<StorageUsageResponse>('/files/storage/usage')
     return response.data
   },
+
+  async deleteFile(fileId: string): Promise<void> {
+    await apiClient.delete(`/files/${fileId}`)
+  },
 }
