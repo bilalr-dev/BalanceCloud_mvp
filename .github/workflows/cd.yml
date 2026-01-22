@@ -38,10 +38,10 @@ jobs:
 
     - name: 🚀 Deploy to server
       env:
-        DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
-        DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
-        DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-      if: env.DEPLOY_SSH_HOST != ''
+        DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || '' }}
+        DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || '' }}
+        DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY || '' }}
+      if: env.DEPLOY_SSH_HOST != '' && env.DEPLOY_SSH_HOST != 'null'
       uses: appleboy/ssh-action@v1
       with:
         host: ${{ secrets.DEPLOY_SSH_HOST }}
@@ -53,15 +53,28 @@ jobs:
           docker-compose up -d --build
           docker-compose exec -T backend alembic upgrade head
 
+    - name: ℹ️  Deployment info
+      if: env.DEPLOY_SSH_HOST == '' || env.DEPLOY_SSH_HOST == 'null'
+      run: |
+        echo "## ℹ️  Deployment Info" >> $GITHUB_STEP_SUMMARY
+        echo "Deployment to server skipped - SSH deployment secrets not configured." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "To enable automatic deployment, configure these secrets in GitHub:" >> $GITHUB_STEP_SUMMARY
+        echo "- \`DEPLOY_SSH_HOST\` - SSH hostname or IP" >> $GITHUB_STEP_SUMMARY
+        echo "- \`DEPLOY_SSH_USER\` - SSH username" >> $GITHUB_STEP_SUMMARY
+        echo "- \`DEPLOY_SSH_KEY\` - SSH private key" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Docker image has been built and pushed to registry." >> $GITHUB_STEP_SUMMARY
+
     - name: ✅ Deployment summary
       if: always()
       env:
-        DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+        DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || '' }}
       run: |
         echo "## Deployment Results" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ Docker image built and pushed" >> $GITHUB_STEP_SUMMARY
-        if [ -n "$DEPLOY_SSH_HOST" ]; then
+        if [ -n "$DEPLOY_SSH_HOST" ] && [ "$DEPLOY_SSH_HOST" != "null" ]; then
           echo "- ✅ Deployed to production server" >> $GITHUB_STEP_SUMMARY
         else
-          echo "- ⚠️  Deployment skipped (no SSH host configured)" >> $GITHUB_STEP_SUMMARY
+          echo "- ⚠️  Server deployment skipped (SSH secrets not configured)" >> $GITHUB_STEP_SUMMARY
         fi
