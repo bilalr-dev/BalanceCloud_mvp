@@ -69,7 +69,7 @@ class CloudConnectorService:
             "client_id": settings.GOOGLE_CLIENT_ID,
             "redirect_uri": redirect_uri,
             "response_type": "code",
-            "scope": "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile",
+            "scope": "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.metadata.readonly https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile",
             "access_type": "offline",  # Required to get refresh token
             "prompt": "consent",  # Force consent to get refresh token
             "state": state,

@@ -28,6 +28,8 @@ backend/alembic/versions/*.pyc
 .env
 .env.local
 .env.*.local
+.env.bak
+.env*.bak
 
 # IDE
 .vscode/

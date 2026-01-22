@@ -17,6 +17,7 @@ from app.models.user import User
 from app.schemas.file import FileCreate, FileListResponse, FileResponse
 from app.services.encryption_service import encryption_service
 from app.services.file_service import file_service
+from app.services.storage_service import storage_service
 
 router = APIRouter()
 
@@ -140,6 +141,19 @@ async def upload_file(
     try:
         # Read file data
         file_data = await file.read()
+        
+        # Check storage quota before upload
+        file_size = len(file_data)
+        has_space, available_bytes = await storage_service.check_storage_available(
+            db, str(current_user.id), file_size
+        )
+        if not has_space:
+            available_gb = round(available_bytes / (1024 ** 3), 2)
+            file_size_gb = round(file_size / (1024 ** 3), 2)
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"Insufficient storage space. Available: {available_gb} GB, Required: {file_size_gb} GB",
+            )
 
         # Get user encryption key (aligned with contract)
         user_key = await encryption_service.get_or_create_user_encryption_key(
@@ -205,6 +219,38 @@ async def upload_file(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to upload file: {str(e)}",
+        )
+
+
+@router.get("/storage/usage")
+async def get_storage_usage(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get storage usage for the current user
+    
+    Returns:
+        {
+            "used_bytes": 1024,
+            "total_bytes": 10737418240,
+            "used_percentage": 0.01,
+            "used_gb": 0.000001,
+            "total_gb": 10.0
+        }
+    """
+    try:
+        usage = await storage_service.get_storage_usage(db, str(current_user.id))
+        # Ensure cloud_storage is always present in response
+        if "cloud_storage" not in usage:
+            usage["cloud_storage"] = {"google_drive": None, "onedrive": None}
+        return usage
+    except Exception as e:
+        import logging
+        logging.error(f"Failed to get storage usage: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get storage usage: {str(e)}",
         )
 
 
