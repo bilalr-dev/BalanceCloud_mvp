@@ -9,7 +9,6 @@ export default function FilesPage() {
   const {
     files,
     currentFolderId,
-    storageUsage,
     isLoading,
     isUploading,
     uploadProgress,
@@ -19,7 +18,6 @@ export default function FilesPage() {
     downloadFile,
     deleteFile,
     fetchStorageUsage,
-    setCurrentFolder,
     clearError,
   } = useFilesStore()
 
@@ -79,7 +77,7 @@ export default function FilesPage() {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
   }
 
-  const getCloudProvider = (file: FileType): string | null => {
+  const getCloudProvider = (_file: FileType): string | null => {
     const account = accounts.find(acc => acc.is_connected)
     return account ? account.provider : null
   }

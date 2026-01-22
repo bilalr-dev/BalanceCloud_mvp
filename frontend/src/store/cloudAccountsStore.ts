@@ -1,7 +1,7 @@
 // Cloud Accounts Store using Zustand
 
 import { create } from 'zustand'
-import { CloudAccount, CloudProvider } from '@/types/api'
+import { CloudAccount } from '@/types/api'
 import { cloudAccountService } from '@/services/cloudAccountService'
 
 interface CloudAccountsState {
@@ -25,7 +25,7 @@ export const useCloudAccountsStore = create<CloudAccountsState>((set, get) => ({
     if (get().isFetchingAccounts) {
       return
     }
-    
+
     set({ isLoading: true, error: null, isFetchingAccounts: true })
     try {
       const response = await cloudAccountService.listAccounts()
@@ -44,7 +44,7 @@ export const useCloudAccountsStore = create<CloudAccountsState>((set, get) => ({
         })
         return
       }
-      
+
       const errorMessage = error.response?.data?.detail || 'Failed to fetch cloud accounts'
       set({
         isLoading: false,
