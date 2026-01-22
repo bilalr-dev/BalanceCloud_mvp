@@ -1,25 +1,39 @@
-// Login Page based on Frontend-Backend Contract v1.0.0
+// Register Page based on Frontend-Backend Contract v1.0.0
 
 import { useState, FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import './AuthPage.css'
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [validationError, setValidationError] = useState('')
   
-  const { login, error, clearError } = useAuthStore()
+  const { register, error, clearError } = useAuthStore()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     clearError()
+    setValidationError('')
+
+    if (password !== confirmPassword) {
+      setValidationError('Passwords do not match')
+      return
+    }
+
+    if (password.length < 8) {
+      setValidationError('Password must be at least 8 characters')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
-      await login(email, password)
+      await register(email, password)
       navigate('/')
     } catch (err) {
       // Error is handled by store
@@ -32,8 +46,8 @@ export default function LoginPage() {
     <div className="auth-page">
       <div className="auth-container">
         <div className="auth-card">
-          <h1 className="auth-title">Welcome Back</h1>
-          <p className="auth-subtitle">Sign in to your BalanceCloud account</p>
+          <h1 className="auth-title">Create Account</h1>
+          <p className="auth-subtitle">Sign up for BalanceCloud</p>
 
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
@@ -59,10 +73,26 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="••••••••"
+                minLength={8}
               />
             </div>
 
-            {error && <div className="error-message">{error}</div>}
+            <div className="form-group">
+              <label htmlFor="confirmPassword">Confirm Password</label>
+              <input
+                id="confirmPassword"
+                type="password"
+                className="input"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+              />
+            </div>
+
+            {(error || validationError) && (
+              <div className="error-message">{error || validationError}</div>
+            )}
 
             <button
               type="submit"
@@ -72,16 +102,16 @@ export default function LoginPage() {
               {isSubmitting ? (
                 <>
                   <span className="loading"></span>
-                  Signing in...
+                  Creating account...
                 </>
               ) : (
-                'Sign In'
+                'Sign Up'
               )}
             </button>
           </form>
 
           <p className="auth-footer">
-            Don't have an account? <Link to="/register">Sign up</Link>
+            Already have an account? <Link to="/login">Sign in</Link>
           </p>
         </div>
       </div>
