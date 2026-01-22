@@ -8,6 +8,7 @@ interface CloudAccountsState {
   accounts: CloudAccount[]
   isLoading: boolean
   error: string | null
+  isFetchingAccounts: boolean
   fetchAccounts: () => Promise<void>
   disconnectAccount: (accountId: string) => Promise<void>
   clearError: () => void
@@ -17,21 +18,38 @@ export const useCloudAccountsStore = create<CloudAccountsState>((set, get) => ({
   accounts: [],
   isLoading: false,
   error: null,
+  isFetchingAccounts: false,
 
   fetchAccounts: async () => {
-    set({ isLoading: true, error: null })
+    // Prevent concurrent calls
+    if (get().isFetchingAccounts) {
+      return
+    }
+    
+    set({ isLoading: true, error: null, isFetchingAccounts: true })
     try {
       const response = await cloudAccountService.listAccounts()
       set({
         accounts: response.accounts,
         isLoading: false,
         error: null,
+        isFetchingAccounts: false,
       })
     } catch (error: any) {
+      // Don't show error for rate limits
+      if (error.response?.status === 429) {
+        set({
+          isLoading: false,
+          isFetchingAccounts: false,
+        })
+        return
+      }
+      
       const errorMessage = error.response?.data?.detail || 'Failed to fetch cloud accounts'
       set({
         isLoading: false,
         error: errorMessage,
+        isFetchingAccounts: false,
       })
     }
   },

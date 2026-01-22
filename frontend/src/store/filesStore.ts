@@ -12,9 +12,11 @@ interface FilesState {
   isUploading: boolean
   uploadProgress: number
   error: string | null
+  isFetchingStorageUsage: boolean
   fetchFiles: (parentId?: string) => Promise<void>
   uploadFile: (file: File, parentId?: string) => Promise<void>
   downloadFile: (fileId: string, fileName: string) => Promise<void>
+  deleteFile: (fileId: string) => Promise<void>
   fetchStorageUsage: () => Promise<void>
   setCurrentFolder: (folderId: string | null) => void
   clearError: () => void
@@ -28,6 +30,7 @@ export const useFilesStore = create<FilesState>((set, get) => ({
   isUploading: false,
   uploadProgress: 0,
   error: null,
+  isFetchingStorageUsage: false,
 
   fetchFiles: async (parentId?: string) => {
     set({ isLoading: true, error: null })
@@ -64,6 +67,12 @@ export const useFilesStore = create<FilesState>((set, get) => ({
 
       // Refresh file list
       await get().fetchFiles(parentId)
+      
+      // Wait a bit for database to fully commit, then refresh storage usage
+      // This ensures the storage calculation reflects the upload
+      setTimeout(async () => {
+        await get().fetchStorageUsage()
+      }, 500)
 
       set({
         isUploading: false,
@@ -101,12 +110,50 @@ export const useFilesStore = create<FilesState>((set, get) => ({
     }
   },
 
+  deleteFile: async (fileId: string) => {
+    set({ isLoading: true, error: null })
+    try {
+      await fileService.deleteFile(fileId)
+      
+      // Refresh file list
+      await get().fetchFiles(get().currentFolderId || undefined)
+      
+      // Wait a bit for database to fully commit, then refresh storage usage
+      // This ensures the storage calculation reflects the deletion
+      setTimeout(async () => {
+        await get().fetchStorageUsage()
+      }, 500)
+      
+      set({ isLoading: false, error: null })
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.detail || 'Failed to delete file'
+      set({
+        isLoading: false,
+        error: errorMessage,
+      })
+      throw error
+    }
+  },
+
   fetchStorageUsage: async () => {
+    // Prevent concurrent calls
+    if (get().isFetchingStorageUsage) {
+      return
+    }
+    
+    // Allow refreshing storage usage even if data exists
+    // This ensures storage usage updates after file uploads/deletes
+    
+    set({ isFetchingStorageUsage: true })
     try {
       const usage = await fileService.getStorageUsage()
-      set({ storageUsage: usage })
+      set({ storageUsage: usage, isFetchingStorageUsage: false })
     } catch (error: any) {
-      console.error('Failed to fetch storage usage:', error)
+      set({ isFetchingStorageUsage: false })
+      // Only log error if it's not a rate limit (429)
+      if (error.response?.status !== 429) {
+        console.error('Failed to fetch storage usage:', error)
+      }
     }
   },
 
