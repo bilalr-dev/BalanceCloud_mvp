@@ -21,6 +21,7 @@ This directory contains all project documentation organized by category.
 
 ### 🏗️ Architecture
 - **[Encryption Architecture](architecture/ENCRYPTION_ARCHITECTURE.md)** - Encryption design and implementation
+- **[Technical Documentation](architecture/TECHNICAL_DOCUMENTATION.md)** - Technical choices, difficulties, bottlenecks, and improvements
 
 ### 📋 API Documentation
 - **[Developer Contract](api/DEVELOPER_CONTRACT.md)** - Backend API contract (detailed)
