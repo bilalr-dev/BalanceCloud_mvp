@@ -37,7 +37,7 @@ jobs:
         cache-to: type=registry,ref=${{ secrets.DOCKER_REGISTRY || 'ghcr.io' }}/${{ github.repository }}/backend:buildcache,mode=max
 
     - name: 🚀 Deploy to server
-      if: ${{ secrets.DEPLOY_SSH_HOST }}
+      if: ${{ secrets.DEPLOY_SSH_HOST != '' }}
       uses: appleboy/ssh-action@v1
       with:
         host: ${{ secrets.DEPLOY_SSH_HOST }}
@@ -54,7 +54,7 @@ jobs:
       run: |
         echo "## Deployment Results" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ Docker image built and pushed" >> $GITHUB_STEP_SUMMARY
-        if [ "${{ secrets.DEPLOY_SSH_HOST }}" != "" ]; then
+        if [ -n "${{ secrets.DEPLOY_SSH_HOST }}" ]; then
           echo "- ✅ Deployed to production server" >> $GITHUB_STEP_SUMMARY
         else
           echo "- ⚠️  Deployment skipped (no SSH host configured)" >> $GITHUB_STEP_SUMMARY
