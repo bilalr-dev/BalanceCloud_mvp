@@ -1,190 +1,189 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../store/authStore'
-import { useFileStore } from '../store/fileStore'
-import { fileService, File } from '../services/fileService'
+// Files Page based on Frontend-Backend Contract v1.0.0
+
+import { useEffect, useRef } from 'react'
+import { useFilesStore } from '@/store/filesStore'
+import { useCloudAccountsStore } from '@/store/cloudAccountsStore'
+import { File as FileType } from '@/types/api'
+import './FilesPage.css'
 
 export default function FilesPage() {
-  const navigate = useNavigate()
-  const { token } = useAuthStore()
-  const { files, setFiles, currentFolderId, setCurrentFolder, removeFile } = useFileStore()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [uploading, setUploading] = useState(false)
+  const {
+    files,
+    currentFolderId,
+    storageUsage,
+    isLoading,
+    isUploading,
+    uploadProgress,
+    error,
+    fetchFiles,
+    uploadFile,
+    downloadFile,
+    fetchStorageUsage,
+    setCurrentFolder,
+    clearError,
+  } = useFilesStore()
+
+  const { accounts } = useCloudAccountsStore()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (!token) {
-      navigate('/login')
-      return
-    }
-    loadFiles()
-  }, [token, currentFolderId, navigate])
+    fetchFiles(currentFolderId || undefined)
+    fetchStorageUsage()
+  }, [currentFolderId])
 
-  const loadFiles = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const response = await fileService.listFiles(currentFolderId || undefined)
-      setFiles(response.files)
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to load files')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file) return
-
-    setUploading(true)
-    try {
-      await fileService.uploadFile(file, currentFolderId || undefined)
-      loadFiles()
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to upload file')
-    } finally {
-      setUploading(false)
+    if (file) {
+      handleUpload(file)
     }
   }
 
-  const handleDelete = async (fileId: string) => {
-    if (!confirm('Are you sure you want to delete this file?')) return
-
+  const handleUpload = async (file: File) => {
     try {
-      await fileService.deleteFile(fileId)
-      removeFile(fileId)
-      loadFiles()
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to delete file')
+      await uploadFile(file, currentFolderId || undefined)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    } catch (err) {
+      // Error handled by store
     }
   }
 
-  const handleDownload = async (file: File) => {
+  const handleDownload = async (file: FileType) => {
     try {
-      const blob = await fileService.downloadFile(file.id)
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = file.name
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to download file')
+      await downloadFile(file.id, file.name)
+    } catch (err) {
+      // Error handled by store
     }
   }
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
+  const handleFolderClick = (folder: FileType) => {
+    setCurrentFolder(folder.id)
+  }
+
+  const handleBack = () => {
+    setCurrentFolder(null)
+  }
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 B'
     const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const sizes = ['B', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
   }
 
+  const getCloudProvider = (file: FileType): string | null => {
+    // Check if file is stored in cloud (this would come from backend in real implementation)
+    // For now, we'll show cloud icon if user has connected accounts
+    return accounts.length > 0 ? 'cloud' : null
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="text-blue-600 hover:text-blue-500"
-              >
-                ← Dashboard
-              </button>
-              <h1 className="text-xl font-bold text-gray-900">Files</h1>
-            </div>
+    <div className="files-page">
+      <div className="container">
+        <div className="files-header">
+          <div>
+            <h1 className="page-title">My Files</h1>
+            {storageUsage && (
+              <p className="storage-info">
+                Storage: {storageUsage.used_gb.toFixed(2)} GB / {storageUsage.total_gb.toFixed(2)} GB
+                ({storageUsage.used_percentage.toFixed(1)}%)
+              </p>
+            )}
+          </div>
+          <div className="files-actions">
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleFileSelect}
+              style={{ display: 'none' }}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="btn btn-primary"
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <>
+                  <span className="loading"></span>
+                  Uploading... {uploadProgress}%
+                </>
+              ) : (
+                'Upload File'
+              )}
+            </button>
           </div>
         </div>
-      </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">My Files</h2>
-              <label className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer">
-                {uploading ? 'Uploading...' : 'Upload File'}
-                <input
-                  type="file"
-                  className="hidden"
-                  onChange={handleFileUpload}
-                  disabled={uploading}
-                />
-              </label>
-            </div>
+        {error && (
+          <div className="error-banner">
+            <span>{error}</span>
+            <button onClick={clearError} className="btn-close">×</button>
           </div>
+        )}
 
-          {error && (
-            <div className="p-4 bg-red-50 border-l-4 border-red-400">
-              <p className="text-red-700">{error}</p>
+        {currentFolderId && (
+          <div className="breadcrumb">
+            <button onClick={handleBack} className="btn btn-outline btn-sm">
+              ← Back
+            </button>
+          </div>
+        )}
+
+        <div className="files-content">
+          {isLoading ? (
+            <div className="loading-state">
+              <span className="loading"></span>
+              <span>Loading files...</span>
             </div>
-          )}
-
-          {loading ? (
-            <div className="p-8 text-center text-gray-500">Loading files...</div>
           ) : files.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">No files yet. Upload your first file!</div>
+            <div className="empty-state">
+              <p>No files yet</p>
+              <p className="empty-state-subtitle">Upload your first file to get started</p>
+            </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Size
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Type
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {files.map((file) => (
-                    <tr key={file.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <span className="mr-2">
-                            {file.is_folder ? '📁' : '📄'}
-                          </span>
-                          <span className="text-sm font-medium text-gray-900">{file.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {file.is_folder ? '-' : formatFileSize(file.size)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {file.is_folder ? 'Folder' : file.mime_type}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        {!file.is_folder && (
-                          <button
-                            onClick={() => handleDownload(file)}
-                            className="text-blue-600 hover:text-blue-900 mr-4"
-                          >
-                            Download
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleDelete(file.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="files-grid">
+              {files.map((file) => (
+                <div
+                  key={file.id}
+                  className="file-card"
+                  onClick={() => file.is_folder && handleFolderClick(file)}
+                >
+                  <div className="file-icon">
+                    {file.is_folder ? (
+                      <span className="icon-folder">📁</span>
+                    ) : (
+                      <span className="icon-file">📄</span>
+                    )}
+                    {getCloudProvider(file) && (
+                      <span className="cloud-badge" title="Stored in cloud">☁️</span>
+                    )}
+                  </div>
+                  <div className="file-info">
+                    <h3 className="file-name" title={file.name}>
+                      {file.name}
+                    </h3>
+                    <p className="file-meta">
+                      {file.is_folder
+                        ? 'Folder'
+                        : `${formatFileSize(file.size)} • ${new Date(file.created_at).toLocaleDateString()}`}
+                    </p>
+                  </div>
+                  {!file.is_folder && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDownload(file)
+                      }}
+                      className="btn-download"
+                      title="Download"
+                    >
+                      ⬇️
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>

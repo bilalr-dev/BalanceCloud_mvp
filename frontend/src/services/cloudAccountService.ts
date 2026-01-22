@@ -1,46 +1,24 @@
+// Cloud Account Service based on Cloud Accounts API Contract v1.0.0
+
 import apiClient from './apiClient'
-
-export interface CloudAccount {
-  id: string
-  provider: 'google_drive' | 'onedrive'
-  provider_account_id: string
-  is_connected: boolean
-  token_expires_at: string | null
-  created_at: string
-  updated_at: string
-}
-
-export interface CloudAccountListResponse {
-  accounts: CloudAccount[]
-  total: number
-}
-
-export interface OAuthInitiateResponse {
-  oauth_url: string
-  state: string
-}
-
-export interface OAuthCallbackResponse {
-  account_id: string
-  provider: 'google_drive' | 'onedrive'
-  provider_account_id: string
-  is_connected: boolean
-  message: string
-}
+import {
+  CloudAccount,
+  CloudAccountListResponse,
+  CloudProvider,
+  OAuthInitiateResponse,
+  OAuthCallbackResponse,
+} from '@/types/api'
 
 export const cloudAccountService = {
-  listAccounts: async (): Promise<CloudAccountListResponse> => {
+  async listAccounts(): Promise<CloudAccountListResponse> {
     const response = await apiClient.get<CloudAccountListResponse>('/cloud-accounts')
     return response.data
   },
 
-  initiateOAuth: async (
-    provider: 'google_drive' | 'onedrive',
-    redirectUri: string
-  ): Promise<OAuthInitiateResponse> => {
+  async initiateOAuth(provider: CloudProvider, redirectUri: string): Promise<OAuthInitiateResponse> {
     const response = await apiClient.post<OAuthInitiateResponse>(
       `/cloud-accounts/connect/${provider}`,
-      null,
+      {},
       {
         params: { redirect_uri: redirectUri },
       }
@@ -48,11 +26,11 @@ export const cloudAccountService = {
     return response.data
   },
 
-  handleCallback: async (
-    provider: 'google_drive' | 'onedrive',
+  async handleCallback(
+    provider: CloudProvider,
     code: string,
     state: string
-  ): Promise<OAuthCallbackResponse> => {
+  ): Promise<OAuthCallbackResponse> {
     const response = await apiClient.get<OAuthCallbackResponse>(
       `/cloud-accounts/callback/${provider}`,
       {
@@ -62,11 +40,16 @@ export const cloudAccountService = {
     return response.data
   },
 
-  disconnectAccount: async (accountId: string): Promise<void> => {
+  async disconnectAccount(accountId: string): Promise<void> {
     await apiClient.delete(`/cloud-accounts/${accountId}`)
   },
 
-  refreshToken: async (accountId: string): Promise<void> => {
+  async refreshToken(accountId: string): Promise<void> {
     await apiClient.post(`/cloud-accounts/${accountId}/refresh`)
+  },
+
+  async getAccountStatus(accountId: string): Promise<CloudAccount> {
+    const response = await apiClient.get<CloudAccount>(`/cloud-accounts/${accountId}/status`)
+    return response.data
   },
 }
