@@ -58,17 +58,35 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         # Add Content-Security-Policy (CSP)
         # Allow same-origin and API endpoints
-        csp = (
-            "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "  # Allow inline for dev
-            "style-src 'self' 'unsafe-inline'; "  # Allow inline styles
-            "img-src 'self' data: https:; "
-            "font-src 'self' data:; "
-            "connect-src 'self' https:; "
-            "frame-ancestors 'none'; "
-            "base-uri 'self'; "
-            "form-action 'self';"
-        )
+        # For Swagger UI docs, allow CDN resources
+        is_docs_path = request.url.path.startswith("/api/docs") or request.url.path.startswith("/api/redoc")
+        
+        if is_docs_path:
+            # More permissive CSP for Swagger UI documentation
+            csp = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com; "
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; "
+                "img-src 'self' data: https:; "
+                "font-src 'self' data: https://cdn.jsdelivr.net https://unpkg.com; "
+                "connect-src 'self' https:; "
+                "frame-ancestors 'none'; "
+                "base-uri 'self'; "
+                "form-action 'self';"
+            )
+        else:
+            # Standard CSP for API endpoints
+            csp = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "  # Allow inline for dev
+                "style-src 'self' 'unsafe-inline'; "  # Allow inline styles
+                "img-src 'self' data: https:; "
+                "font-src 'self' data:; "
+                "connect-src 'self' https:; "
+                "frame-ancestors 'none'; "
+                "base-uri 'self'; "
+                "form-action 'self';"
+            )
         response.headers["Content-Security-Policy"] = csp
 
         # Add HSTS (HTTP Strict Transport Security) if HTTPS
