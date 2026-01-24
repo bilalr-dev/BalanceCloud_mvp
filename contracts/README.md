@@ -33,6 +33,8 @@ contracts/
 | Cloud Accounts API | Bilal (Backend) | 1.0.0 | 📝 Draft | 2026-01-20 |
 | Cloud Connector | Helijao (Cloud) | 1.0.0 | 📝 Draft | 2026-01-20 |
 | Encryption Service | Bilal (Encryption) | 1.0.0 | 📝 Draft | 2026-01-20 |
+| Team managment and PO | Aakash | 1.0.0 | 📝 Draft | 2026-01-20 |
+
 
 **Status Legend:**
 - 📝 **Draft:** Still being designed, don't integrate yet
