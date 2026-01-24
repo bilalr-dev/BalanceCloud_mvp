@@ -141,7 +141,7 @@ export default function CloudAccountsPage() {
       )}
 
       {/* Storage Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {providers.map((provider) => {
           const account = getAccountForProvider(provider)
           const isConnected = !!account
@@ -239,6 +239,38 @@ export default function CloudAccountsPage() {
             </div>
           )
         })}
+
+        {/* Dropbox - UI Only, No Functionality */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">📦</span>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white">Dropbox</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Not connected</p>
+              </div>
+            </div>
+            <span className="px-2 py-1 text-xs font-medium rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+              Disconnected
+            </span>
+          </div>
+
+          <div className="mb-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">No storage data available</p>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="h-2 rounded-full bg-gray-300 dark:bg-gray-600" style={{ width: '0%' }}></div>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <button
+              disabled
+              className="w-full px-4 py-2 text-sm font-medium text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 rounded-lg transition-colors cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              Coming Soon
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Local Storage Card */}

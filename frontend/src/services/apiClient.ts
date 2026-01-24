@@ -30,7 +30,10 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ErrorResponse>) => {
     if (error.response?.status === 401) {
+      // Clear token from localStorage
       localStorage.removeItem(AUTH_TOKEN_KEY)
+      // Clear Zustand persisted auth state
+      localStorage.removeItem('auth-storage')
       // Only redirect if not already on login/register page
       if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
         window.location.href = '/login'

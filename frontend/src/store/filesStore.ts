@@ -150,10 +150,12 @@ export const useFilesStore = create<FilesState>((set, get) => ({
       set({ storageUsage: usage, isFetchingStorageUsage: false })
     } catch (error: any) {
       set({ isFetchingStorageUsage: false })
-      // Only log error if it's not a rate limit (429)
-      if (error.response?.status !== 429) {
+      // Don't log 401 errors - they're handled by apiClient interceptor
+      // Don't log 429 errors - they're rate limits
+      if (error.response?.status !== 429 && error.response?.status !== 401) {
         console.error('Failed to fetch storage usage:', error)
       }
+      // If 401, the apiClient will handle redirect to login
     }
   },
 
