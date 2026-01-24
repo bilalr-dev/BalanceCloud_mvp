@@ -1,7 +1,0 @@
-docker compose up -d
-docker-compose exec backend alembic upgrade head
-
-Get a JWT token from the backend:
-
-Download openssl if not installed
-openssl rand -x 32 - RUN IT 3 TIMES
