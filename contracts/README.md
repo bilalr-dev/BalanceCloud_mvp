@@ -54,20 +54,22 @@ contracts/
 
 ---
 
-## Contracts by Developer Role
+## Contracts by Role
 
 ### Bilal (Backend Infrastructure)
 - **[Backend API Contract](backend-api-v1.0.0.md)** - Core API endpoints (✅ Stable)
-- **[Cloud Accounts API Contract](cloud-accounts-api-v1.0.0.md)** - Cloud account management endpoints (📝 Draft)
 
-### Bilal (Encryption & File Services)
-- **[Encryption Service Contract](encryption-service-v1.0.0.md)** - Encryption, chunking, key management (📝 Draft)
+### Aakash (Backend Infrastructure)
+- **[Cloud Accounts API Contract](cloud-accounts-api-v1.0.0.md)** - Cloud account management endpoints (✅ Stable)
 
 ### Helijao (Cloud Connectors)
-- **[Cloud Connector Contract](cloud-connector-backend-v1.0.0.md)** - OAuth flows, Google Drive, OneDrive integration (📝 Draft)
+- **[Cloud Connector Contract](cloud-connector-backend-v1.0.0.md)** - OAuth flows, Google Drive, OneDrive integration (✅ Stable)
 
 ### Mouhamad (Frontend & UX)
-- **[Frontend-Backend Contract](frontend-backend-v1.0.0.md)** - Frontend integration patterns (📝 Draft)
+- **[Frontend-Backend Contract](frontend-backend-v1.0.0.md)** - Frontend integration patterns (✅ Stable)
+
+### Bilal (Encryption & File Services)
+- **[Encryption Service Contract](encryption-service-v1.0.0.md)** - Encryption, chunking, key management (✅ Stable)
 
 ---
 
