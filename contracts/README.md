@@ -71,7 +71,7 @@ contracts/
 
 ---
 
-## 📋 Contract Reference to Tasks
+## Contract Reference to Tasks
 
 All contracts are based on **TASKS_PLANING.md** which outlines the 1-week sprint plan:
 
