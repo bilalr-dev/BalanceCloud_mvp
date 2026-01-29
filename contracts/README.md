@@ -54,7 +54,7 @@ contracts/
 
 ---
 
-## 📚 Contracts by Developer Role
+## Contracts by Developer Role
 
 ### Bilal (Backend Infrastructure)
 - **[Backend API Contract](backend-api-v1.0.0.md)** - Core API endpoints (✅ Stable)
