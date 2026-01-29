@@ -1,9 +1,9 @@
 # Cloud Accounts API Contract v1.0.0
 
-**Owner:** Bilal (Backend Infrastructure)  
+**Owner:** Aakash (Backend Infrastructure)  
 **Version:** 1.0.0  
-**Status:** 📝 Draft  
-**Last Updated:** 2026-01-20  
+**Status:** ✅ Stable
+**Last Updated:** 2026-01-22  
 **Dependencies:** 
 - Backend API Contract v1.0.0
 - Cloud Connector-Backend Contract v1.0.0
